@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Enviar Documentos — Vanessa Branco</title>
+<meta name="theme-color" content="#0f2636">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="icon-apple-touch.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Enviar Docs">
+<style>
+  :root{
+    --navy-900:#0a1c29;
+    --navy-800:#102a3c;
+    --navy-700:#173d55;
+    --gold:#ceab6d;
+    --gold-light:#e4c893;
+    --white:#f6f9fb;
+    --muted:#9db2c0;
+    --ok:#5fb98a;
+    --warn:#e0a541;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:linear-gradient(180deg,var(--navy-900),var(--navy-800) 60%);
+    color:var(--white);
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .app{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    max-width:480px;
+    margin:0 auto;
+    width:100%;
+    padding:0 20px;
+    padding-bottom:env(safe-area-inset-bottom,0);
+  }
+  header.topo{
+    padding:22px 0 10px;
+    text-align:center;
+  }
+  header.topo .marca{
+    font-size:13px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--gold);
+    font-weight:600;
+  }
+  header.topo .marca-sub{
+    font-size:11px;
+    color:var(--muted);
+    margin-top:2px;
+  }
+  .tela{
+    display:none;
+    flex:1;
+    flex-direction:column;
+  }
+  .tela.ativa{display:flex;}
+
+  /* --- Início --- */
+  #tela-inicio{justify-content:center; text-align:center; gap:18px;}
+  #tela-inicio h1{font-size:22px; margin:0 0 6px; font-weight:700;}
+  #tela-inicio p{color:var(--muted); font-size:14.5px; line-height:1.5; margin:0;}
+  .icone-camara-grande{
+    width:84px; height:84px; margin:6px auto 0;
+    border-radius:22px;
+    background:linear-gradient(160deg,var(--navy-700),var(--navy-800));
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 8px 24px rgba(0,0,0,.35);
+  }
+  .icone-camara-grande svg{width:42px; height:42px;}
+
+  /* --- Câmara --- */
+  #tela-camara{gap:14px;}
+  .video-wrap{
+    position:relative;
+    flex:1;
+    border-radius:18px;
+    overflow:hidden;
+    background:#000;
+    min-height:340px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  #video{width:100%; height:100%; object-fit:cover; display:block;}
+  .moldura-qr{
+    position:absolute; inset:12%;
+    border:2px dashed rgba(246,249,251,.35);
+    border-radius:16px;
+    pointer-events:none;
+    transition:border-color .2s;
+  }
+  .moldura-qr.detetado{border-color:var(--ok); border-style:solid;}
+  .pill-estado{
+    position:absolute; top:14px; left:50%; transform:translateX(-50%);
+    background:rgba(10,28,41,.82);
+    color:var(--white);
+    font-size:12.5px; font-weight:600;
+    padding:7px 14px;
+    border-radius:999px;
+    display:flex; align-items:center; gap:6px;
+    backdrop-filter:blur(4px);
+  }
+  .pill-estado .ponto{width:8px; height:8px; border-radius:50%; background:var(--muted);}
+  .pill-estado.ok .ponto{background:var(--ok);}
+  .pill-estado.ok{color:var(--ok);}
+
+  /* --- Revisão --- */
+  #tela-revisao{gap:14px;}
+  .foto-wrap{
+    flex:1; border-radius:18px; overflow:hidden; background:#000;
+    display:flex; align-items:center; justify-content:center; min-height:340px;
+  }
+  #foto-preview{width:100%; height:100%; object-fit:contain; display:block;}
+  .resultado-qr{
+    display:flex; align-items:center; gap:10px;
+    padding:12px 14px;
+    border-radius:14px;
+    font-size:14px; font-weight:600;
+  }
+  .resultado-qr.ok{background:rgba(95,185,138,.15); color:var(--ok);}
+  .resultado-qr.duvida{background:rgba(224,165,65,.15); color:var(--warn);}
+  .resultado-qr small{display:block; font-weight:400; color:var(--muted); margin-top:2px;}
+
+  /* --- Botões --- */
+  .botoes{display:flex; gap:10px; padding:16px 0 22px;}
+  button{
+    font-family:inherit;
+    border:none; border-radius:14px;
+    padding:15px 18px;
+    font-size:15.5px; font-weight:700;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  button:active{transform:scale(.98);}
+  .btn-principal{
+    background:var(--gold); color:var(--navy-900);
+    flex:1;
+  }
+  .btn-secundario{
+    background:var(--navy-700); color:var(--white);
+  }
+  .btn-full{width:100%;}
+  .btn-capturar{
+    align-self:center;
+    width:74px; height:74px; border-radius:50%;
+    background:var(--white);
+    border:4px solid var(--gold);
+    padding:0;
+  }
+  .btn-capturar:active{background:var(--gold-light);}
+
+  #tela-erro{justify-content:center; text-align:center; gap:14px;}
+  #tela-erro h1{font-size:19px; margin:0;}
+  #tela-erro p{color:var(--muted); font-size:14px; line-height:1.5;}
+
+  footer.rodape{
+    text-align:center;
+    padding:10px 0 18px;
+    font-size:11px;
+    color:var(--muted);
+  }
+
+  .oculto{display:none !important;}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topo">
+    <div class="marca">Vanessa Branco</div>
+    <div class="marca-sub">Accounting and Finance</div>
+  </header>
+
+  <!-- TELA: Início -->
+  <section id="tela-inicio" class="tela ativa">
+    <div class="icone-camara-grande">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#ceab6d" stroke-width="1.6">
+        <path d="M4 8a2 2 0 0 1 2-2h1.2l.9-1.4A1 1 0 0 1 9 4h6a1 1 0 0 1 .9.6L16.8 6H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8Z"/>
+        <circle cx="12" cy="13" r="3.4"/>
+      </svg>
+    </div>
+    <h1>Enviar um documento</h1>
+    <p>Tira uma foto ao documento (fatura, recibo, extrato...) e envia diretamente por email ou WhatsApp. Se tiver código QR, avisamos-te se ficou bem legível antes de enviares.</p>
+    <button class="btn-principal btn-full" id="btn-iniciar">Tirar Foto</button>
+  </section>
+
+  <!-- TELA: Câmara -->
+  <section id="tela-camara" class="tela">
+    <div class="video-wrap">
+      <video id="video" autoplay playsinline muted></video>
+      <div class="moldura-qr" id="moldura-qr"></div>
+      <div class="pill-estado" id="pill-estado"><span class="ponto"></span><span id="pill-texto">A abrir câmara...</span></div>
+    </div>
+    <button class="btn-capturar" id="btn-capturar" aria-label="Tirar foto"></button>
+  </section>
+
+  <!-- TELA: Revisão -->
+  <section id="tela-revisao" class="tela">
+    <div class="foto-wrap">
+      <img id="foto-preview" alt="Documento fotografado">
+    </div>
+    <div class="resultado-qr" id="resultado-qr"></div>
+    <div class="botoes">
+      <button class="btn-secundario" id="btn-repetir">↺ Repetir</button>
+      <button class="btn-principal" id="btn-partilhar">Enviar »</button>
+    </div>
+  </section>
+
+  <!-- TELA: Erro -->
+  <section id="tela-erro" class="tela">
+    <h1>Não consegui aceder à câmara</h1>
+    <p id="erro-texto">Verifica se deste permissão de câmara a este site nas definições do telemóvel, e tenta outra vez.</p>
+    <button class="btn-principal" id="btn-tentar-de-novo">Tentar de novo</button>
+  </section>
+
+  <footer class="rodape">made by Hugo Ribeiro</footer>
+</div>
+
+<canvas id="canvas-captura" class="oculto"></canvas>
+<script src="jsQR.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
