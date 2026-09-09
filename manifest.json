@@ -1,6 +1,6 @@
 {
-  "name": "Enviar Documentos — Vanessa Branco",
-  "short_name": "Enviar Docs",
+  "name": "Bate & Envia — Vanessa Branco",
+  "short_name": "Bate & Envia",
   "description": "Fotografa e envia documentos contabilísticos, com verificação automática de código QR.",
   "start_url": "./index.html",
   "scope": "./",

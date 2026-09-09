@@ -425,3 +425,54 @@ if ("serviceWorker" in navigator) {
     });
   });
 }
+
+// ---------------------------------------------------------------------
+// "Fixar app no ecrã principal" -- pedido explícito do utilizador,
+// 2026-09-09, para não depender do cliente encontrar isto sozinho no
+// menu do browser.
+//
+// Android/Chrome: o browser dispara "beforeinstallprompt" quando a app
+// cumpre os requisitos de instalação (manifest válido, HTTPS, service
+// worker) -- guarda esse evento e usa-o quando o cliente tocar no botão.
+// iOS/Safari nunca dispara este evento (Apple não expõe esta API por
+// código nenhum) -- nesse caso mostra-se antes o texto com os passos
+// manuais ("Partilhar" -> "Adicionar ao Ecrã Principal").
+// Se a app já estiver a correr instalada (modo standalone), não faz
+// sentido mostrar nenhum dos dois.
+// ---------------------------------------------------------------------
+const btnInstalar = document.getElementById("btn-instalar");
+const notaInstalarIos = document.getElementById("nota-instalar-ios");
+let promptInstalacaoDiferido = null;
+
+function aCorrerInstalada() {
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.navigator.standalone === true // Safari iOS
+  );
+}
+
+const ehIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+
+if (!aCorrerInstalada()) {
+  if (ehIos) {
+    notaInstalarIos.classList.remove("oculto");
+  } else {
+    window.addEventListener("beforeinstallprompt", (evento) => {
+      evento.preventDefault();
+      promptInstalacaoDiferido = evento;
+      btnInstalar.classList.remove("oculto");
+    });
+  }
+}
+
+btnInstalar.addEventListener("click", async () => {
+  if (!promptInstalacaoDiferido) return;
+  promptInstalacaoDiferido.prompt();
+  await promptInstalacaoDiferido.userChoice;
+  promptInstalacaoDiferido = null;
+  btnInstalar.classList.add("oculto");
+});
+
+window.addEventListener("appinstalled", () => {
+  btnInstalar.classList.add("oculto");
+});
