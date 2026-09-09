@@ -95,6 +95,16 @@
   .botoes-concluido{flex-direction:column; padding-top:8px;}
   #tela-inicio h1{font-size:22px; margin:0 0 6px; font-weight:700;}
   #tela-inicio p{color:var(--muted); font-size:14.5px; line-height:1.5; margin:0;}
+  .botoes-inicio{
+    display:flex; flex-direction:column; gap:10px;
+    width:100%; padding-top:2px;
+  }
+  .botoes-inicio button{
+    flex-direction:column; gap:2px; padding:14px 18px;
+  }
+  .botoes-inicio button small{
+    font-weight:400; font-size:12px; opacity:.85;
+  }
   .icone-camara-grande{
     width:84px; height:84px; margin:6px auto 0;
     border-radius:22px;
@@ -291,8 +301,11 @@
   <section id="tela-inicio" class="tela ativa">
     <img class="icone-camara-grande" src="icon-512.png" alt="Bate & Envia">
     <h1>Bate & Envia</h1>
-    <p>Tiras 2 fotos rápidas a cada documento (fatura, recibo, extrato...): uma bem perto do código QR, outra ao documento completo. Depois enviamos tudo junto por email.</p>
-    <button class="btn-principal btn-full" id="btn-iniciar">Tirar Fotos</button>
+    <p>O documento tem código QR (fatura, recibo...) ou não (guia da AT, outro papel qualquer)?</p>
+    <div class="botoes-inicio">
+      <button class="btn-principal btn-full" id="btn-iniciar-com-qr">Com código QR<small>2 fotos: QR + documento</small></button>
+      <button class="btn-secundario btn-full" id="btn-iniciar-sem-qr">Sem código QR<small>1 foto só do documento</small></button>
+    </div>
     <button class="btn-instalar oculto" id="btn-instalar">📌 Fixar app no ecrã principal</button>
     <p class="nota-instalar-ios oculto" id="nota-instalar-ios">Para fixares no ecrã principal: toca em <strong>Partilhar</strong> (⬆) e depois em <strong>"Adicionar ao Ecrã Principal"</strong>.</p>
   </section>
@@ -312,7 +325,7 @@
   <!-- TELA: Revisão -->
   <section id="tela-revisao" class="tela">
     <div class="cartoes-fotos">
-      <div class="cartao-foto">
+      <div class="cartao-foto" id="cartao-qr">
         <div class="cartao-foto-img-wrap pequeno">
           <img id="foto-preview-qr" alt="Código QR fotografado">
         </div>

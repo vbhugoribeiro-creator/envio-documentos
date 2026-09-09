@@ -42,6 +42,7 @@ const dicaPasso = document.getElementById("dica-passo");
 const fotoPreviewQr = document.getElementById("foto-preview-qr");
 const fotoPreviewDoc = document.getElementById("foto-preview-doc");
 const resultadoQr = document.getElementById("resultado-qr");
+const cartaoQr = document.getElementById("cartao-qr");
 const erroTexto = document.getElementById("erro-texto");
 const enderecoEnvio = document.getElementById("endereco-envio");
 enderecoEnvio.textContent = EMAIL_DESTINO;
@@ -61,6 +62,8 @@ document.getElementById("btn-copiar-endereco").addEventListener("click", async (
 let streamAtual = null;
 let intervaloDeteccao = null;
 let etapaAtual = "qr"; // "qr" | "documento"
+let temQr = true; // false = documento sem código QR, só 1 foto (ex: guia
+  // da AT) -- pedido explícito do utilizador, 2026-09-09.
 let fotoQrBlob = null;
 let fotoDocBlob = null;
 let qrDetetadoNaFoto = false;
@@ -94,8 +97,8 @@ async function abrirCamara() {
     pillTexto.textContent = "A abrir câmara...";
     pillEstado.classList.remove("oculto");
   } else {
-    passoIndicador.textContent = "Passo 2 de 2 — Documento completo";
-    dicaPasso.textContent = "Agora afasta-te um pouco e apanha o documento completo.";
+    passoIndicador.textContent = temQr ? "Passo 2 de 2 — Documento completo" : "Documento";
+    dicaPasso.textContent = "Afasta-te o suficiente para apanhar o documento completo.";
     molduraQr.classList.remove("pequena");
     pillEstado.classList.add("oculto");
   }
@@ -277,7 +280,8 @@ function capturarFoto() {
       (blob) => {
         fotoDocBlob = blob;
         fotoPreviewDoc.src = URL.createObjectURL(blob);
-        mostrarResultadoQr(qrDetetadoNaFoto);
+        cartaoQr.classList.toggle("oculto", !temQr);
+        if (temQr) mostrarResultadoQr(qrDetetadoNaFoto);
         mostrarTela("revisao");
       },
       "image/jpeg",
@@ -326,10 +330,11 @@ function carregarImagem(blob) {
   });
 }
 
+// blobQr é opcional -- null/undefined para um documento sem código QR
+// (1 página só). Pedido explícito do utilizador, 2026-09-09.
 async function construirPdfDocumento(blobDoc, blobQr) {
   const { jsPDF } = window.jspdf;
   const imgDoc = await carregarImagem(blobDoc);
-  const imgQr = await carregarImagem(blobQr);
 
   // Tamanho de página em mm a partir dos pixels da foto, a ~150dpi --
   // legível, sem gerar um PDF desnecessariamente pesado para enviar por
@@ -343,17 +348,20 @@ async function construirPdfDocumento(blobDoc, blobQr) {
   });
   doc.addImage(imgDoc, "JPEG", 0, 0, pxParaMm(imgDoc.naturalWidth), pxParaMm(imgDoc.naturalHeight));
 
-  doc.addPage(
-    [pxParaMm(imgQr.naturalWidth), pxParaMm(imgQr.naturalHeight)],
-    imgQr.naturalWidth > imgQr.naturalHeight ? "landscape" : "portrait"
-  );
-  doc.addImage(imgQr, "JPEG", 0, 0, pxParaMm(imgQr.naturalWidth), pxParaMm(imgQr.naturalHeight));
+  if (blobQr) {
+    const imgQr = await carregarImagem(blobQr);
+    doc.addPage(
+      [pxParaMm(imgQr.naturalWidth), pxParaMm(imgQr.naturalHeight)],
+      imgQr.naturalWidth > imgQr.naturalHeight ? "landscape" : "portrait"
+    );
+    doc.addImage(imgQr, "JPEG", 0, 0, pxParaMm(imgQr.naturalWidth), pxParaMm(imgQr.naturalHeight));
+  }
 
   return doc.output("blob");
 }
 
 document.getElementById("btn-partilhar").addEventListener("click", async () => {
-  if (!fotoQrBlob || !fotoDocBlob) return;
+  if (!fotoDocBlob || (temQr && !fotoQrBlob)) return;
   const btn = document.getElementById("btn-partilhar");
   const textoOriginal = btn.textContent;
   btn.textContent = "A preparar...";
@@ -416,16 +424,25 @@ document.getElementById("btn-partilhar").addEventListener("click", async () => {
 // ---------------------------------------------------------------------
 // Início / novo documento / terminar / erro
 // ---------------------------------------------------------------------
-function iniciarNovoDocumento() {
-  etapaAtual = "qr";
+function iniciarNovoDocumento(comQr) {
+  temQr = comQr;
+  etapaAtual = comQr ? "qr" : "documento";
   repetirApenasQr = false;
   fotoQrBlob = null;
   fotoDocBlob = null;
   abrirCamara();
 }
 
-document.getElementById("btn-iniciar").addEventListener("click", iniciarNovoDocumento);
-document.getElementById("btn-novo-documento").addEventListener("click", iniciarNovoDocumento);
+document.getElementById("btn-iniciar-com-qr").addEventListener("click", () => iniciarNovoDocumento(true));
+document.getElementById("btn-iniciar-sem-qr").addEventListener("click", () => iniciarNovoDocumento(false));
+
+// "Fotografar outro documento" volta à escolha inicial (com/sem QR),
+// já que o próximo documento pode ser de um tipo diferente do anterior.
+document.getElementById("btn-novo-documento").addEventListener("click", () => {
+  fotoQrBlob = null;
+  fotoDocBlob = null;
+  mostrarTela("inicio");
+});
 document.getElementById("btn-terminar").addEventListener("click", () => {
   fotoQrBlob = null;
   fotoDocBlob = null;
