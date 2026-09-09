@@ -57,6 +57,9 @@
     text-align:center;
     flex-shrink:0;
   }
+  /* Ver mostrarTela() em app.js -- ganha espaço vertical precioso durante
+     a câmara, onde a marca não faz falta nenhuma. */
+  body.camara-ativa header.topo{display:none;}
   header.topo .marca{
     font-size:13px;
     letter-spacing:.06em;

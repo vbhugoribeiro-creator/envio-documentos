@@ -48,6 +48,11 @@ let qrDetetadoNaFoto = false;
 function mostrarTela(nome) {
   Object.values(telas).forEach((t) => t.classList.remove("ativa"));
   telas[nome].classList.add("ativa");
+  // Esconde o cabeçalho de marca durante a câmara -- não serve nenhum
+  // propósito ali e o espaço que ocupa é precioso: em telemóveis mais
+  // baixos era preciso deslizar o ecrã para alcançar o botão de captura.
+  // Reportado pelo utilizador em teste real, 2026-09-09.
+  document.body.classList.toggle("camara-ativa", nome === "camara");
 }
 
 // ---------------------------------------------------------------------
