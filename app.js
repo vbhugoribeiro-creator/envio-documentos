@@ -89,10 +89,13 @@ function iniciarDeteccaoContinua() {
 
   intervaloDeteccao = setInterval(() => {
     if (!video.videoWidth) return;
-    // Reduz a resolução para a deteção em contínuo -- não precisa da
-    // imagem toda em alta resolução só para saber "há QR ou não há",
-    // e mantém a deteção fluida em telemóveis mais fracos.
-    const escala = 480 / video.videoWidth;
+    // A reduzir demasiado a resolução aqui, o código QR (normalmente uma
+    // fração pequena da página inteira) ficava com poucos pixels a
+    // menos de uns 10-15cm de distância -- obrigava a aproximar demasiado
+    // o telemóvel do documento, perdendo o resto da página de vista.
+    // Caso real, 2026-09-09. 960px de largura lê a distâncias normais de
+    // fotografar uma página inteira, mantendo ainda boa fluidez.
+    const escala = Math.min(1, 960 / video.videoWidth);
     canvasDetecao.width = Math.round(video.videoWidth * escala);
     canvasDetecao.height = Math.round(video.videoHeight * escala);
     ctxDetecao.drawImage(video, 0, 0, canvasDetecao.width, canvasDetecao.height);
@@ -108,7 +111,7 @@ function iniciarDeteccaoContinua() {
       pillEstado.classList.remove("ok");
       molduraQr.classList.remove("detetado");
     }
-  }, 350);
+  }, 450);
 }
 
 // ---------------------------------------------------------------------
