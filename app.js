@@ -19,6 +19,11 @@
 // que o QR não saia legível na foto do documento completo.
 // ---------------------------------------------------------------------
 
+// Destinatário fixo por agora (pedido explícito do utilizador,
+// 2026-09-09) -- já configurado no automatismo de leitura de email do
+// escritório, ver _config_email.json.
+const EMAIL_DESTINO = "vb.hugo.ribeiro@gmail.com";
+
 const telas = {
   inicio: document.getElementById("tela-inicio"),
   camara: document.getElementById("tela-camara"),
@@ -38,6 +43,20 @@ const fotoPreviewQr = document.getElementById("foto-preview-qr");
 const fotoPreviewDoc = document.getElementById("foto-preview-doc");
 const resultadoQr = document.getElementById("resultado-qr");
 const erroTexto = document.getElementById("erro-texto");
+const enderecoEnvio = document.getElementById("endereco-envio");
+enderecoEnvio.textContent = EMAIL_DESTINO;
+
+document.getElementById("btn-copiar-endereco").addEventListener("click", async (evento) => {
+  try {
+    await navigator.clipboard.writeText(EMAIL_DESTINO);
+    const btn = evento.currentTarget;
+    const original = btn.textContent;
+    btn.textContent = "Copiado!";
+    setTimeout(() => (btn.textContent = original), 1500);
+  } catch (e) {
+    console.error("Não consegui copiar:", e);
+  }
+});
 
 let streamAtual = null;
 let intervaloDeteccao = null;
@@ -354,35 +373,35 @@ document.getElementById("btn-partilhar").addEventListener("click", async () => {
   const hoje = new Date().toISOString().slice(0, 10);
   const ficheiroPdf = new File([pdfBlob], `documento_${hoje}.pdf`, { type: "application/pdf" });
 
-  // Por agora, o envio é só por email, sempre para o mesmo destinatário
-  // fixo (pedido explícito do utilizador, 2026-09-09 -- já está
-  // configurado no automatismo de leitura de email do escritório, ver
-  // _config_email.json). O Web Share API não tem forma de pré-preencher
-  // o campo "Para" de um email (só existe "mailto:" para isso, que por
-  // sua vez não permite anexar ficheiros) -- por isso aqui faz as duas
-  // coisas em separado: descarrega o PDF e abre logo o email já com o
-  // destinatário e assunto preenchidos, só falta o cliente anexar o
-  // ficheiro (feito automaticamente pelo Gmail/Mail se o ficheiro
-  // acabado de descarregar ainda aparecer na lista de anexos recentes,
-  // caso contrário o cliente escolhe-o da pasta de transferências).
-  const EMAIL_DESTINO = "vb.hugo.ribeiro@gmail.com";
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(ficheiroPdf);
-  a.download = ficheiroPdf.name;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-
-  const assunto = encodeURIComponent("Documento para a contabilidade");
-  const corpo = encodeURIComponent(
-    `Documento em anexo (${ficheiroPdf.name}).\n\nEnviado pela app "Enviar Documentos".`
-  );
-  // Pequeno atraso -- dá tempo ao telemóvel de mostrar a notificação de
-  // "ficheiro transferido" antes de mudar de app para o email, evita a
-  // sensação de que nada aconteceu com a transferência.
-  setTimeout(() => {
-    window.location.href = `mailto:${EMAIL_DESTINO}?subject=${assunto}&body=${corpo}`;
-  }, 400);
+  // Voltou-se atrás do "mailto: + descarregar" (tentado antes, 2026-09-09)
+  // -- confirmado em teste real que os emails chegavam SEM anexo nenhum.
+  // "mailto:" nunca anexa ficheiros, é uma limitação de segurança dos
+  // browsers, não há como contornar -- o cliente tinha de se lembrar de
+  // ir anexar o PDF transferido à mão, e isso não estava a acontecer.
+  // O Web Share API (navigator.share) É fiável a anexar o ficheiro real
+  // quando o cliente escolhe o Gmail/Mail na lista -- o único que perde
+  // é não conseguir pré-preencher o campo "Para", por isso mostra-se
+  // bem visível e copiável no ecrã (ver #endereco-envio).
+  if (navigator.canShare && navigator.canShare({ files: [ficheiroPdf] })) {
+    try {
+      await navigator.share({
+        files: [ficheiroPdf],
+        title: "Documento",
+        text: `Documento para a contabilidade (enviar para ${EMAIL_DESTINO}).`,
+      });
+    } catch (e) {
+      if (e && e.name !== "AbortError") console.error("Erro a partilhar:", e);
+    }
+  } else {
+    // Sem suporte a partilha de ficheiros (raro em telemóvel, comum em
+    // browser de computador) -- oferece o PDF como download.
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(ficheiroPdf);
+    a.download = ficheiroPdf.name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
 
   btn.textContent = textoOriginal;
   btn.disabled = false;
