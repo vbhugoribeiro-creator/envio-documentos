@@ -124,6 +124,45 @@ function pararCamara() {
 }
 
 // ---------------------------------------------------------------------
+// Realce de contraste (esticamento linear do histograma de luminância) --
+// os talões térmicos são o caso mais difícil: fundo acinzentado, tinta
+// desbotada, pouco contraste entre os módulos do QR e o fundo. É
+// exatamente o mesmo problema que já se resolveu no leitor do GaveConta
+// (binarização do zbar, 2026-08-26) -- aqui aplica-se o equivalente antes
+// de entregar a imagem ao jsQR. Devolve uma nova ImageData, não mexe na
+// original.
+// ---------------------------------------------------------------------
+function realcarContraste(imageData) {
+  const d = imageData.data;
+  let min = 255;
+  let max = 0;
+  for (let i = 0; i < d.length; i += 4) {
+    const lum = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+    if (lum < min) min = lum;
+    if (lum > max) max = lum;
+  }
+  const amplitude = max - min;
+  if (amplitude < 12) return imageData; // já é quase só uma cor, não há o que esticar
+  const saida = new Uint8ClampedArray(d.length);
+  for (let i = 0; i < d.length; i += 4) {
+    const lum = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+    const valor = Math.round(((lum - min) / amplitude) * 255);
+    saida[i] = saida[i + 1] = saida[i + 2] = valor;
+    saida[i + 3] = 255;
+  }
+  return new ImageData(saida, imageData.width, imageData.height);
+}
+
+// Tenta ler o QR na imagem tal como está e, se falhar, na versão com
+// contraste realçado -- cobre tanto os casos normais (mais rápido, não
+// precisa do realce) como os talões térmicos de baixo contraste.
+function tentarDecodificarQr(imageData) {
+  if (jsQR(imageData.data, imageData.width, imageData.height)) return true;
+  const realcada = realcarContraste(imageData);
+  return !!jsQR(realcada.data, realcada.width, realcada.height);
+}
+
+// ---------------------------------------------------------------------
 // Deteção de QR em contínuo (throttled), só corre no Passo 1 -- serve de
 // feedback visual antes de capturar; a leitura que conta para o
 // resultado final é feita sobre a própria foto capturada, em resolução
@@ -140,7 +179,7 @@ function iniciarDeteccaoContinua() {
     canvasDetecao.height = Math.round(video.videoHeight * escala);
     ctxDetecao.drawImage(video, 0, 0, canvasDetecao.width, canvasDetecao.height);
     const dados = ctxDetecao.getImageData(0, 0, canvasDetecao.width, canvasDetecao.height);
-    const resultado = jsQR(dados.data, dados.width, dados.height);
+    const resultado = tentarDecodificarQr(dados);
     if (resultado) {
       pillTexto.textContent = "Código QR encontrado";
       pillEstado.classList.add("ok");
@@ -155,19 +194,19 @@ function iniciarDeteccaoContinua() {
 
 // ---------------------------------------------------------------------
 // Decidir se a foto capturada tem QR legível -- experimenta a imagem em
-// resolução completa e, se falhar, também a mesma escala reduzida usada
-// na deteção ao vivo. Contra-intuitivo, mas real: um código QR nem
-// sempre lê melhor em resolução total (ruído do sensor, padrões de
-// moiré) do que numa versão ligeiramente reduzida -- por isso o
-// indicador ao vivo podia mostrar "encontrado" e a foto capturada, um
-// instante depois, falhar na leitura em resolução completa. Reportado
-// pelo utilizador em teste real, 2026-09-09.
+// resolução completa (com e sem realce de contraste) e, se falhar,
+// também a mesma escala reduzida usada na deteção ao vivo. Contra-
+// intuitivo, mas real: um código QR nem sempre lê melhor em resolução
+// total (ruído do sensor, padrões de moiré) do que numa versão
+// ligeiramente reduzida -- por isso o indicador ao vivo podia mostrar
+// "encontrado" e a foto capturada, um instante depois, falhar na leitura
+// em resolução completa. Reportado pelo utilizador em teste real,
+// 2026-09-09.
 // ---------------------------------------------------------------------
 function decodificarQrComReserva(ctx, w, h) {
   const dadosCompletos = ctx.getImageData(0, 0, w, h);
-  if (jsQR(dadosCompletos.data, dadosCompletos.width, dadosCompletos.height)) {
-    return true;
-  }
+  if (tentarDecodificarQr(dadosCompletos)) return true;
+
   const escala = Math.min(1, 960 / w);
   if (escala >= 1) return false; // já era a resolução mais baixa possível
   const canvasReduzido = document.createElement("canvas");
@@ -176,7 +215,7 @@ function decodificarQrComReserva(ctx, w, h) {
   const ctxReduzido = canvasReduzido.getContext("2d");
   ctxReduzido.drawImage(canvasCaptura, 0, 0, canvasReduzido.width, canvasReduzido.height);
   const dadosReduzidos = ctxReduzido.getImageData(0, 0, canvasReduzido.width, canvasReduzido.height);
-  return !!jsQR(dadosReduzidos.data, dadosReduzidos.width, dadosReduzidos.height);
+  return tentarDecodificarQr(dadosReduzidos);
 }
 
 // ---------------------------------------------------------------------
