@@ -1,6 +1,6 @@
 {
-  "name": "Bate & Envia — Vanessa Branco",
-  "short_name": "Bate & Envia",
+  "name": "ContaClick — Vanessa Branco",
+  "short_name": "ContaClick",
   "description": "Fotografa e envia documentos contabilísticos, com verificação automática de código QR.",
   "start_url": "./index.html",
   "scope": "./",
