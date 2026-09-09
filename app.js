@@ -23,6 +23,7 @@ const telas = {
   inicio: document.getElementById("tela-inicio"),
   camara: document.getElementById("tela-camara"),
   revisao: document.getElementById("tela-revisao"),
+  concluido: document.getElementById("tela-concluido"),
   erro: document.getElementById("tela-erro"),
 };
 
@@ -312,16 +313,30 @@ document.getElementById("btn-partilhar").addEventListener("click", async () => {
 
   btn.textContent = textoOriginal;
   btn.disabled = false;
+
+  // Depois de enviado, o botão "Enviar documento" não faz sentido
+  // continuar tão em destaque -- passa para um ecrã de conclusão com as
+  // opções que fazem sentido a seguir (novo documento, ou terminar).
+  // Pedido explícito do utilizador, 2026-09-09.
+  mostrarTela("concluido");
 });
 
 // ---------------------------------------------------------------------
-// Início / erro
+// Início / novo documento / terminar / erro
 // ---------------------------------------------------------------------
-document.getElementById("btn-iniciar").addEventListener("click", () => {
+function iniciarNovoDocumento() {
   etapaAtual = "qr";
   fotoQrBlob = null;
   fotoDocBlob = null;
   abrirCamara();
+}
+
+document.getElementById("btn-iniciar").addEventListener("click", iniciarNovoDocumento);
+document.getElementById("btn-novo-documento").addEventListener("click", iniciarNovoDocumento);
+document.getElementById("btn-terminar").addEventListener("click", () => {
+  fotoQrBlob = null;
+  fotoDocBlob = null;
+  mostrarTela("inicio");
 });
 
 document.getElementById("btn-tentar-de-novo").addEventListener("click", abrirCamara);

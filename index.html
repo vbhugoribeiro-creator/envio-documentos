@@ -81,7 +81,10 @@
   .tela.ativa{display:flex;}
 
   /* --- Início --- */
-  #tela-inicio{justify-content:center; text-align:center; gap:18px;}
+  #tela-inicio, #tela-concluido{justify-content:center; text-align:center; gap:18px;}
+  #tela-concluido h1{font-size:22px; margin:0 0 6px; font-weight:700;}
+  #tela-concluido p{color:var(--muted); font-size:14.5px; line-height:1.5; margin:0;}
+  .botoes-concluido{flex-direction:column; padding-top:8px;}
   #tela-inicio h1{font-size:22px; margin:0 0 6px; font-weight:700;}
   #tela-inicio p{color:var(--muted); font-size:14.5px; line-height:1.5; margin:0;}
   .icone-camara-grande{
@@ -253,7 +256,7 @@
       </svg>
     </div>
     <h1>Enviar um documento</h1>
-    <p>Tiras 2 fotos rápidas a cada documento (fatura, recibo, extrato...): uma bem perto do código QR, outra ao documento completo. Depois envias as duas juntas por email ou WhatsApp.</p>
+    <p>Tiras 2 fotos rápidas a cada documento (fatura, recibo, extrato...): uma bem perto do código QR, outra ao documento completo. Depois enviamos tudo junto por email.</p>
     <button class="btn-principal btn-full" id="btn-iniciar">Tirar Fotos</button>
   </section>
 
@@ -295,6 +298,21 @@
       <button class="btn-principal btn-full" id="btn-partilhar">Enviar documento »</button>
     </div>
     <p class="nota-envio">Vamos transferir o PDF e abrir o teu email já com o destinatário preenchido — só falta anexares o ficheiro transferido antes de enviar.</p>
+  </section>
+
+  <!-- TELA: Concluído -->
+  <section id="tela-concluido" class="tela">
+    <div class="icone-camara-grande">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#ceab6d" stroke-width="1.8">
+        <path d="M4.5 12.5l5 5 10-11" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h1>Documento preparado</h1>
+    <p>Transferimos o PDF e abrimos o teu email. Confirma o anexo e envia por lá.</p>
+    <div class="botoes botoes-concluido">
+      <button class="btn-principal btn-full" id="btn-novo-documento">Fotografar outro documento</button>
+      <button class="btn-secundario btn-full" id="btn-terminar">Terminar</button>
+    </div>
   </section>
 
   <!-- TELA: Erro -->
