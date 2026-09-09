@@ -100,9 +100,29 @@
     border:2px dashed rgba(246,249,251,.35);
     border-radius:16px;
     pointer-events:none;
-    transition:border-color .2s;
+    transition:border-color .2s, inset .2s;
+  }
+  /* Passo 1 (código QR): guia pequeno e centrado -- aproximar até o QR
+     encher este quadrado, em vez do retângulo grande usado para a página
+     inteira no passo 2. */
+  .moldura-qr.pequena{
+    inset:32% 22%;
+    border-radius:12px;
   }
   .moldura-qr.detetado{border-color:var(--ok); border-style:solid;}
+
+  .passo-indicador{
+    text-align:center;
+    font-size:12.5px; font-weight:700;
+    color:var(--gold);
+    text-transform:uppercase; letter-spacing:.04em;
+    padding:2px 0 2px;
+  }
+  .dica-passo{
+    text-align:center;
+    font-size:13px; color:var(--muted);
+    margin:0; padding:0 6px;
+  }
   .pill-estado{
     position:absolute; top:14px; left:50%; transform:translateX(-50%);
     background:rgba(10,28,41,.82);
@@ -118,24 +138,46 @@
   .pill-estado.ok{color:var(--ok);}
 
   /* --- Revisão --- */
-  #tela-revisao{gap:14px;}
-  .foto-wrap{
-    flex:1; border-radius:18px; overflow:hidden; background:#000;
-    display:flex; align-items:center; justify-content:center; min-height:340px;
+  #tela-revisao{gap:14px; padding-top:16px; overflow-y:auto;}
+  .cartoes-fotos{display:flex; flex-direction:column; gap:14px;}
+  .cartao-foto{
+    background:var(--navy-800);
+    border-radius:16px;
+    padding:10px;
+    display:flex; gap:12px;
   }
-  #foto-preview{width:100%; height:100%; object-fit:contain; display:block;}
+  .cartao-foto-img-wrap{
+    flex:0 0 130px; height:150px;
+    border-radius:12px; overflow:hidden; background:#000;
+  }
+  .cartao-foto-img-wrap.pequeno{flex:0 0 96px; height:96px;}
+  .cartao-foto-img-wrap img{width:100%; height:100%; object-fit:cover; display:block;}
+  .cartao-foto-info{
+    flex:1; min-width:0;
+    display:flex; flex-direction:column; justify-content:center; gap:8px;
+  }
+  .rotulo-cartao{font-size:14px; font-weight:700; color:var(--white);}
   .resultado-qr{
-    display:flex; align-items:center; gap:10px;
-    padding:12px 14px;
-    border-radius:14px;
-    font-size:14px; font-weight:600;
+    display:flex; flex-direction:column; gap:2px;
+    font-size:13px; font-weight:700;
+    line-height:1.35;
   }
-  .resultado-qr.ok{background:rgba(95,185,138,.15); color:var(--ok);}
-  .resultado-qr.duvida{background:rgba(224,165,65,.15); color:var(--warn);}
+  .resultado-qr.ok{color:var(--ok);}
+  .resultado-qr.duvida{color:var(--warn);}
+  .resultado-qr small{font-weight:400; color:var(--muted);}
+  .btn-link{
+    background:none; border:none; padding:0;
+    color:var(--gold); font-size:12.5px; font-weight:600;
+    text-align:left; align-self:flex-start;
+  }
   .resultado-qr small{display:block; font-weight:400; color:var(--muted); margin-top:2px;}
 
   /* --- Botões --- */
-  .botoes{display:flex; gap:10px; padding:16px 0 22px;}
+  .botoes{display:flex; gap:10px; padding:16px 0 6px;}
+  .nota-envio{
+    text-align:center; font-size:12px; color:var(--muted);
+    line-height:1.4; margin:0 0 20px; padding:0 8px;
+  }
   button{
     font-family:inherit;
     border:none; border-radius:14px;
@@ -192,30 +234,48 @@
       </svg>
     </div>
     <h1>Enviar um documento</h1>
-    <p>Tira uma foto ao documento (fatura, recibo, extrato...) e envia diretamente por email ou WhatsApp. Se tiver código QR, avisamos-te se ficou bem legível antes de enviares.</p>
-    <button class="btn-principal btn-full" id="btn-iniciar">Tirar Foto</button>
+    <p>Tiras 2 fotos rápidas a cada documento (fatura, recibo, extrato...): uma bem perto do código QR, outra ao documento completo. Depois envias as duas juntas por email ou WhatsApp.</p>
+    <button class="btn-principal btn-full" id="btn-iniciar">Tirar Fotos</button>
   </section>
 
-  <!-- TELA: Câmara -->
+  <!-- TELA: Câmara (reaproveitada para os 2 passos -- ver app.js, etapaAtual) -->
   <section id="tela-camara" class="tela">
+    <div class="passo-indicador" id="passo-indicador">Passo 1 de 2 — Código QR</div>
     <div class="video-wrap">
       <video id="video" autoplay playsinline muted></video>
       <div class="moldura-qr" id="moldura-qr"></div>
       <div class="pill-estado" id="pill-estado"><span class="ponto"></span><span id="pill-texto">A abrir câmara...</span></div>
     </div>
+    <p class="dica-passo" id="dica-passo">Aproxima bem o telemóvel até o código QR ficar dentro do quadrado.</p>
     <button class="btn-capturar" id="btn-capturar" aria-label="Tirar foto"></button>
   </section>
 
   <!-- TELA: Revisão -->
   <section id="tela-revisao" class="tela">
-    <div class="foto-wrap">
-      <img id="foto-preview" alt="Documento fotografado">
+    <div class="cartoes-fotos">
+      <div class="cartao-foto">
+        <div class="cartao-foto-img-wrap pequeno">
+          <img id="foto-preview-qr" alt="Código QR fotografado">
+        </div>
+        <div class="cartao-foto-info">
+          <div class="resultado-qr" id="resultado-qr"></div>
+          <button class="btn-link" id="btn-repetir-qr">↺ Repetir esta foto</button>
+        </div>
+      </div>
+      <div class="cartao-foto">
+        <div class="cartao-foto-img-wrap">
+          <img id="foto-preview-doc" alt="Documento completo fotografado">
+        </div>
+        <div class="cartao-foto-info">
+          <span class="rotulo-cartao">Documento completo</span>
+          <button class="btn-link" id="btn-repetir-doc">↺ Repetir esta foto</button>
+        </div>
+      </div>
     </div>
-    <div class="resultado-qr" id="resultado-qr"></div>
     <div class="botoes">
-      <button class="btn-secundario" id="btn-repetir">↺ Repetir</button>
-      <button class="btn-principal" id="btn-partilhar">Enviar »</button>
+      <button class="btn-principal btn-full" id="btn-partilhar">Enviar documento »</button>
     </div>
+    <p class="nota-envio">Vamos transferir o PDF e abrir o teu email já com o destinatário preenchido — só falta anexares o ficheiro transferido antes de enviar.</p>
   </section>
 
   <!-- TELA: Erro -->
@@ -230,6 +290,7 @@
 
 <canvas id="canvas-captura" class="oculto"></canvas>
 <script src="jsQR.js"></script>
+<script src="jspdf.umd.min.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
