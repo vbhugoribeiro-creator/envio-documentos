@@ -9,7 +9,7 @@
 // para ele. Sem isto, quem já tinha a app aberta/instalada continuava a
 // ver a versão antiga em cache, mesmo depois de publicada a correção.
 // Bug real, visto em teste, 2026-09-09.
-const CACHE_NOME = "docs-cliente-v9";
+const CACHE_NOME = "docs-cliente-v10";
 const FICHEIROS_CASCA = [
   "./",
   "./index.html",

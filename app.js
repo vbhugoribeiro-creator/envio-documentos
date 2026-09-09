@@ -471,6 +471,15 @@ async function enviarLote() {
   // browsers, não há como contornar. O Web Share API (navigator.share)
   // suporta vários ficheiros na mesma partilha -- todo o lote sai junto
   // numa única escolha de app, sem repetir o processo por documento.
+  //
+  // Se o cliente CANCELAR o menu de partilha (não escolher nenhuma app),
+  // navigator.share() rejeita com AbortError -- antes disto, o código
+  // seguinte em frente na mesma (limpar o lote, ir para "concluído") corria
+  // à mesma, como se tivesse enviado, obrigando a fotografar tudo de novo
+  // mesmo sem ter enviado nada. Reportado pelo utilizador em teste real,
+  // 2026-09-09. Agora só se considera "enviado" se a partilha não tiver
+  // sido cancelada -- o lote fica intacto e volta-se ao ecrã de lote.
+  let cancelado = false;
   if (navigator.canShare && navigator.canShare({ files: ficheiros })) {
     try {
       await navigator.share({
@@ -479,11 +488,16 @@ async function enviarLote() {
         text: `Documentos para a contabilidade (enviar para ${EMAIL_DESTINO}).`,
       });
     } catch (e) {
-      if (e && e.name !== "AbortError") console.error("Erro a partilhar:", e);
+      if (e && e.name === "AbortError") {
+        cancelado = true;
+      } else {
+        console.error("Erro a partilhar:", e);
+      }
     }
   } else {
     // Sem suporte a partilha de ficheiros (raro em telemóvel, comum em
-    // browser de computador) -- oferece os PDFs como download.
+    // browser de computador) -- oferece os PDFs como download. Não há aqui
+    // conceito de "cancelar" -- a transferência corre sempre.
     for (const ficheiro of ficheiros) {
       const a = document.createElement("a");
       a.href = URL.createObjectURL(ficheiro);
@@ -496,6 +510,11 @@ async function enviarLote() {
 
   btnPartilhar.textContent = textoOriginal;
   btnPartilhar.disabled = false;
+
+  if (cancelado) {
+    return; // fica no ecrã de lote, com os documentos todos intactos.
+  }
+
   documentos = [];
 
   // Depois de enviado, o ecrã de lote não faz sentido continuar visível
