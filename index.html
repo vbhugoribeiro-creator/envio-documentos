@@ -31,6 +31,7 @@
     background:linear-gradient(180deg,var(--navy-900),var(--navy-800) 60%);
     color:var(--white);
     min-height:100vh;
+    min-height:100dvh;
     display:flex;
     flex-direction:column;
     -webkit-tap-highlight-color:transparent;
@@ -42,12 +43,19 @@
     max-width:480px;
     margin:0 auto;
     width:100%;
+    height:100dvh;
     padding:0 20px;
     padding-bottom:env(safe-area-inset-bottom,0);
+    /* Rede de segurança -- se algum ecrã tiver mais conteúdo do que cabe
+       no ecrã do telemóvel (visto num caso real: o botão de captura
+       ficava invisível, fora da vista, num telemóvel mais baixo,
+       2026-09-09), dá para deslizar até lá em vez de ficar inacessível. */
+    overflow-y:auto;
   }
   header.topo{
-    padding:22px 0 10px;
+    padding:14px 0 8px;
     text-align:center;
+    flex-shrink:0;
   }
   header.topo .marca{
     font-size:13px;
@@ -64,6 +72,7 @@
   .tela{
     display:none;
     flex:1;
+    min-height:0;
     flex-direction:column;
   }
   .tela.ativa{display:flex;}
@@ -82,14 +91,16 @@
   .icone-camara-grande svg{width:42px; height:42px;}
 
   /* --- Câmara --- */
-  #tela-camara{gap:14px;}
+  #tela-camara{gap:10px; padding-bottom:10px;}
   .video-wrap{
     position:relative;
     flex:1;
     border-radius:18px;
     overflow:hidden;
     background:#000;
-    min-height:340px;
+    min-height:0; /* sem isto, um filho flex nunca encolhe abaixo do
+      tamanho do seu conteúdo -- era isto que empurrava o botão de
+      captura para fora do ecrã em telemóveis mais baixos. */
     display:flex;
     align-items:center;
     justify-content:center;
@@ -117,11 +128,13 @@
     color:var(--gold);
     text-transform:uppercase; letter-spacing:.04em;
     padding:2px 0 2px;
+    flex-shrink:0;
   }
   .dica-passo{
     text-align:center;
     font-size:13px; color:var(--muted);
     margin:0; padding:0 6px;
+    flex-shrink:0;
   }
   .pill-estado{
     position:absolute; top:14px; left:50%; transform:translateX(-50%);
@@ -197,10 +210,12 @@
   .btn-full{width:100%;}
   .btn-capturar{
     align-self:center;
+    flex-shrink:0;
     width:74px; height:74px; border-radius:50%;
     background:var(--white);
     border:4px solid var(--gold);
     padding:0;
+    margin-bottom:4px;
   }
   .btn-capturar:active{background:var(--gold-light);}
 
@@ -210,9 +225,10 @@
 
   footer.rodape{
     text-align:center;
-    padding:10px 0 18px;
+    padding:8px 0 12px;
     font-size:11px;
     color:var(--muted);
+    flex-shrink:0;
   }
 
   .oculto{display:none !important;}
