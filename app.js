@@ -28,6 +28,7 @@ const telas = {
   inicio: document.getElementById("tela-inicio"),
   camara: document.getElementById("tela-camara"),
   revisao: document.getElementById("tela-revisao"),
+  lote: document.getElementById("tela-lote"),
   concluido: document.getElementById("tela-concluido"),
   erro: document.getElementById("tela-erro"),
 };
@@ -46,6 +47,10 @@ const cartaoQr = document.getElementById("cartao-qr");
 const erroTexto = document.getElementById("erro-texto");
 const enderecoEnvio = document.getElementById("endereco-envio");
 enderecoEnvio.textContent = EMAIL_DESTINO;
+const tituloInicio = document.getElementById("titulo-inicio");
+const textoInicio = document.getElementById("texto-inicio");
+const tituloLote = document.getElementById("titulo-lote");
+const listaLote = document.getElementById("lista-lote");
 
 document.getElementById("btn-copiar-endereco").addEventListener("click", async (evento) => {
   try {
@@ -71,6 +76,13 @@ let repetirApenasQr = false; // true quando "Repetir esta foto" (QR) foi
   // acionado a partir da revisão -- só volta a capturar essa foto, sem
   // forçar a repetir também a do documento.
 
+// Lote (grupo) de documentos prontos a enviar juntos -- pedido explícito
+// do utilizador, 2026-09-09: "deveria existir a opção de poder tirar
+// foto a um conjunto de documentos [...] e enviar tudo de uma vez". Cada
+// item é {temQr, fotoQrBlob, fotoDocBlob, qrDetetadoNaFoto}, uma cópia
+// congelada do documento em edição no momento em que foi adicionado.
+let documentos = [];
+
 function mostrarTela(nome) {
   Object.values(telas).forEach((t) => t.classList.remove("ativa"));
   telas[nome].classList.add("ativa");
@@ -79,6 +91,7 @@ function mostrarTela(nome) {
   // baixos era preciso deslizar o ecrã para alcançar o botão de captura.
   // Reportado pelo utilizador em teste real, 2026-09-09.
   document.body.classList.toggle("camara-ativa", nome === "camara");
+  if (nome === "inicio") atualizarTextoInicio();
 }
 
 // ---------------------------------------------------------------------
@@ -360,66 +373,139 @@ async function construirPdfDocumento(blobDoc, blobQr) {
   return doc.output("blob");
 }
 
-document.getElementById("btn-partilhar").addEventListener("click", async () => {
-  if (!fotoDocBlob || (temQr && !fotoQrBlob)) return;
-  const btn = document.getElementById("btn-partilhar");
-  const textoOriginal = btn.textContent;
-  btn.textContent = "A preparar...";
-  btn.disabled = true;
+// ---------------------------------------------------------------------
+// Lote -- adicionar o documento em edição à lista, mostrar a lista,
+// remover itens, e enviar tudo junto no fim. Pedido explícito do
+// utilizador, 2026-09-09.
+// ---------------------------------------------------------------------
+function renderizarLote() {
+  tituloLote.textContent = documentos.length === 1 ? "1 documento pronto" : `${documentos.length} documentos prontos`;
+  listaLote.innerHTML = "";
+  documentos.forEach((doc, indice) => {
+    const cartao = document.createElement("div");
+    cartao.className = "cartao-lote";
 
-  let pdfBlob;
+    const imgWrap = document.createElement("div");
+    imgWrap.className = "cartao-lote-img";
+    const img = document.createElement("img");
+    img.src = URL.createObjectURL(doc.fotoDocBlob);
+    img.alt = `Documento ${indice + 1}`;
+    imgWrap.appendChild(img);
+
+    const info = document.createElement("div");
+    info.className = "cartao-lote-info";
+    const nome = document.createElement("span");
+    nome.textContent = `Documento ${indice + 1}`;
+    const badge = document.createElement("span");
+    if (!doc.temQr) {
+      badge.className = "badge-qr sem";
+      badge.textContent = "Sem código QR";
+    } else if (doc.qrDetetadoNaFoto) {
+      badge.className = "badge-qr ok";
+      badge.textContent = "✓ QR lido";
+    } else {
+      badge.className = "badge-qr duvida";
+      badge.textContent = "⚠ QR não lido";
+    }
+    info.append(nome, badge);
+
+    const btnRemover = document.createElement("button");
+    btnRemover.className = "btn-remover-lote";
+    btnRemover.setAttribute("aria-label", `Remover documento ${indice + 1}`);
+    btnRemover.textContent = "✕";
+    btnRemover.addEventListener("click", () => {
+      documentos.splice(indice, 1);
+      if (documentos.length === 0) {
+        mostrarTela("inicio");
+      } else {
+        renderizarLote();
+      }
+    });
+
+    cartao.append(imgWrap, info, btnRemover);
+    listaLote.appendChild(cartao);
+  });
+}
+
+document.getElementById("btn-adicionar-lote").addEventListener("click", () => {
+  documentos.push({ temQr, fotoQrBlob, fotoDocBlob, qrDetetadoNaFoto });
+  fotoQrBlob = null;
+  fotoDocBlob = null;
+  renderizarLote();
+  mostrarTela("lote");
+});
+
+document.getElementById("btn-adicionar-outro").addEventListener("click", () => {
+  mostrarTela("inicio");
+});
+
+const btnPartilhar = document.getElementById("btn-partilhar");
+
+async function enviarLote() {
+  if (documentos.length === 0) return;
+  const textoOriginal = btnPartilhar.textContent;
+  btnPartilhar.textContent = "A preparar...";
+  btnPartilhar.disabled = true;
+
+  const hoje = new Date().toISOString().slice(0, 10);
+  let ficheiros;
   try {
-    pdfBlob = await construirPdfDocumento(fotoDocBlob, fotoQrBlob);
+    ficheiros = await Promise.all(
+      documentos.map(async (doc, indice) => {
+        const pdfBlob = await construirPdfDocumento(doc.fotoDocBlob, doc.fotoQrBlob);
+        const sufixo = documentos.length > 1 ? `_${indice + 1}` : "";
+        return new File([pdfBlob], `documento_${hoje}${sufixo}.pdf`, { type: "application/pdf" });
+      })
+    );
   } catch (e) {
-    console.error("Erro a construir o PDF:", e);
-    btn.textContent = textoOriginal;
-    btn.disabled = false;
-    alert("Não consegui juntar as fotos num PDF. Tenta outra vez.");
+    console.error("Erro a construir os PDFs:", e);
+    btnPartilhar.textContent = textoOriginal;
+    btnPartilhar.disabled = false;
+    alert("Não consegui juntar as fotos em PDF. Tenta outra vez.");
     return;
   }
 
-  const hoje = new Date().toISOString().slice(0, 10);
-  const ficheiroPdf = new File([pdfBlob], `documento_${hoje}.pdf`, { type: "application/pdf" });
-
-  // Voltou-se atrás do "mailto: + descarregar" (tentado antes, 2026-09-09)
-  // -- confirmado em teste real que os emails chegavam SEM anexo nenhum.
+  // "mailto: + descarregar" (tentado antes, 2026-09-09) foi abandonado --
+  // confirmado em teste real que os emails chegavam SEM anexo nenhum.
   // "mailto:" nunca anexa ficheiros, é uma limitação de segurança dos
-  // browsers, não há como contornar -- o cliente tinha de se lembrar de
-  // ir anexar o PDF transferido à mão, e isso não estava a acontecer.
-  // O Web Share API (navigator.share) É fiável a anexar o ficheiro real
-  // quando o cliente escolhe o Gmail/Mail na lista -- o único que perde
-  // é não conseguir pré-preencher o campo "Para", por isso mostra-se
-  // bem visível e copiável no ecrã (ver #endereco-envio).
-  if (navigator.canShare && navigator.canShare({ files: [ficheiroPdf] })) {
+  // browsers, não há como contornar. O Web Share API (navigator.share)
+  // suporta vários ficheiros na mesma partilha -- todo o lote sai junto
+  // numa única escolha de app, sem repetir o processo por documento.
+  if (navigator.canShare && navigator.canShare({ files: ficheiros })) {
     try {
       await navigator.share({
-        files: [ficheiroPdf],
-        title: "Documento",
-        text: `Documento para a contabilidade (enviar para ${EMAIL_DESTINO}).`,
+        files: ficheiros,
+        title: "Documentos",
+        text: `Documentos para a contabilidade (enviar para ${EMAIL_DESTINO}).`,
       });
     } catch (e) {
       if (e && e.name !== "AbortError") console.error("Erro a partilhar:", e);
     }
   } else {
     // Sem suporte a partilha de ficheiros (raro em telemóvel, comum em
-    // browser de computador) -- oferece o PDF como download.
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(ficheiroPdf);
-    a.download = ficheiroPdf.name;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    // browser de computador) -- oferece os PDFs como download.
+    for (const ficheiro of ficheiros) {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(ficheiro);
+      a.download = ficheiro.name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
   }
 
-  btn.textContent = textoOriginal;
-  btn.disabled = false;
+  btnPartilhar.textContent = textoOriginal;
+  btnPartilhar.disabled = false;
+  documentos = [];
 
-  // Depois de enviado, o botão "Enviar documento" não faz sentido
-  // continuar tão em destaque -- passa para um ecrã de conclusão com as
-  // opções que fazem sentido a seguir (novo documento, ou terminar).
-  // Pedido explícito do utilizador, 2026-09-09.
+  // Depois de enviado, o ecrã de lote não faz sentido continuar visível
+  // -- passa para um ecrã de conclusão com as opções que fazem sentido a
+  // seguir (novo documento, ou terminar). Pedido explícito do
+  // utilizador, 2026-09-09.
   mostrarTela("concluido");
-});
+}
+
+btnPartilhar.addEventListener("click", enviarLote);
 
 // ---------------------------------------------------------------------
 // Início / novo documento / terminar / erro
@@ -436,14 +522,25 @@ function iniciarNovoDocumento(comQr) {
 document.getElementById("btn-iniciar-com-qr").addEventListener("click", () => iniciarNovoDocumento(true));
 document.getElementById("btn-iniciar-sem-qr").addEventListener("click", () => iniciarNovoDocumento(false));
 
-// "Fotografar outro documento" volta à escolha inicial (com/sem QR),
-// já que o próximo documento pode ser de um tipo diferente do anterior.
+// O texto do ecrã inicial muda consoante já haja (ou não) documentos no
+// lote à espera -- ver mostrarTela().
+function atualizarTextoInicio() {
+  if (documentos.length > 0) {
+    tituloInicio.textContent = "Adicionar mais um documento";
+    textoInicio.textContent = `Já tens ${documentos.length === 1 ? "1 documento" : documentos.length + " documentos"} no envio. Este novo tem código QR ou não?`;
+  } else {
+    tituloInicio.textContent = "ContaClick";
+    textoInicio.textContent = "O documento tem código QR (fatura, recibo...) ou não (guia da AT, outro papel qualquer)?";
+  }
+}
+
 document.getElementById("btn-novo-documento").addEventListener("click", () => {
   fotoQrBlob = null;
   fotoDocBlob = null;
   mostrarTela("inicio");
 });
 document.getElementById("btn-terminar").addEventListener("click", () => {
+  documentos = [];
   fotoQrBlob = null;
   fotoDocBlob = null;
   mostrarTela("inicio");

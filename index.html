@@ -185,6 +185,33 @@
 
   /* --- Revisão --- */
   #tela-revisao{gap:14px; padding-top:16px; overflow-y:auto;}
+
+  /* --- Lote --- */
+  #tela-lote{gap:12px; padding-top:16px; overflow-y:auto;}
+  #tela-lote h1{font-size:18px; margin:0; font-weight:700; text-align:center;}
+  .lista-lote{display:flex; flex-direction:column; gap:10px;}
+  .cartao-lote{
+    background:var(--navy-800);
+    border-radius:14px;
+    padding:8px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .cartao-lote-img{
+    flex:0 0 52px; height:52px;
+    border-radius:8px; overflow:hidden; background:#000;
+  }
+  .cartao-lote-img img{width:100%; height:100%; object-fit:cover; display:block;}
+  .cartao-lote-info{flex:1; min-width:0; display:flex; flex-direction:column; gap:3px;}
+  .cartao-lote-info span:first-child{font-size:13.5px; font-weight:700;}
+  .badge-qr{font-size:11.5px; font-weight:600;}
+  .badge-qr.ok{color:var(--ok);}
+  .badge-qr.duvida{color:var(--warn);}
+  .badge-qr.sem{color:var(--muted);}
+  .btn-remover-lote{
+    background:none; color:var(--muted);
+    font-size:18px; padding:4px 8px; flex-shrink:0;
+  }
+  .btn-remover-lote:active{color:var(--warn);}
   .cartoes-fotos{display:flex; flex-direction:column; gap:14px;}
   .cartao-foto{
     background:var(--navy-800);
@@ -300,8 +327,8 @@
   <!-- TELA: Início -->
   <section id="tela-inicio" class="tela ativa">
     <img class="icone-camara-grande" src="icon-512.png" alt="ContaClick">
-    <h1>ContaClick</h1>
-    <p>O documento tem código QR (fatura, recibo...) ou não (guia da AT, outro papel qualquer)?</p>
+    <h1 id="titulo-inicio">ContaClick</h1>
+    <p id="texto-inicio">O documento tem código QR (fatura, recibo...) ou não (guia da AT, outro papel qualquer)?</p>
     <div class="botoes-inicio">
       <button class="btn-principal btn-full" id="btn-iniciar-com-qr">Com código QR<small>2 fotos: QR + documento</small></button>
       <button class="btn-secundario btn-full" id="btn-iniciar-sem-qr">Sem código QR<small>1 foto só do documento</small></button>
@@ -344,15 +371,25 @@
         </div>
       </div>
     </div>
+    <div class="botoes">
+      <button class="btn-principal btn-full" id="btn-adicionar-lote">✓ Adicionar ao envio</button>
+    </div>
+  </section>
+
+  <!-- TELA: Lote (documentos prontos, à espera de serem enviados juntos) -->
+  <section id="tela-lote" class="tela">
+    <h1 id="titulo-lote">1 documento pronto</h1>
+    <div class="lista-lote" id="lista-lote"></div>
+    <button class="btn-secundario btn-full" id="btn-adicionar-outro">+ Adicionar outro documento</button>
     <div class="caixa-endereco">
       <span>Enviar para:</span>
       <strong id="endereco-envio"></strong>
       <button class="btn-copiar" id="btn-copiar-endereco" aria-label="Copiar endereço">Copiar</button>
     </div>
     <div class="botoes">
-      <button class="btn-principal btn-full" id="btn-partilhar">Enviar documento »</button>
+      <button class="btn-principal btn-full" id="btn-partilhar">Enviar tudo »</button>
     </div>
-    <p class="nota-envio">Toca em "Enviar documento", escolhe o Gmail/Mail na lista que aparece, e confirma que o destinatário é o endereço acima antes de enviares (o telemóvel não o preenche sozinho).</p>
+    <p class="nota-envio">Toca em "Enviar tudo" e escolhe o <strong>Gmail</strong> (ou Mail) na lista que aparece — não o WhatsApp, para o(s) documento(s) chegar(em) ao escritório. Confirma o destinatário acima antes de enviares (o telemóvel não o preenche sozinho).</p>
   </section>
 
   <!-- TELA: Concluído -->
@@ -362,8 +399,8 @@
         <path d="M4.5 12.5l5 5 10-11" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </div>
-    <h1>Documento preparado</h1>
-    <p>Se já escolheste o Gmail/Mail e confirmaste o destinatário, está enviado. Se ainda não enviaste, o PDF continua pronto para partilhar.</p>
+    <h1>Documentos preparados</h1>
+    <p>Se já escolheste o Gmail/Mail e confirmaste o destinatário, está enviado. Se ainda não enviaste, os PDFs continuam prontos para partilhar.</p>
     <div class="botoes botoes-concluido">
       <button class="btn-principal btn-full" id="btn-novo-documento">Fotografar outro documento</button>
       <button class="btn-secundario btn-full" id="btn-terminar">Terminar</button>
