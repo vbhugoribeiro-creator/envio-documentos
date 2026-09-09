@@ -45,6 +45,9 @@ let etapaAtual = "qr"; // "qr" | "documento"
 let fotoQrBlob = null;
 let fotoDocBlob = null;
 let qrDetetadoNaFoto = false;
+let repetirApenasQr = false; // true quando "Repetir esta foto" (QR) foi
+  // acionado a partir da revisão -- só volta a capturar essa foto, sem
+  // forçar a repetir também a do documento.
 
 function mostrarTela(nome) {
   Object.values(telas).forEach((t) => t.classList.remove("ativa"));
@@ -151,6 +154,32 @@ function iniciarDeteccaoContinua() {
 }
 
 // ---------------------------------------------------------------------
+// Decidir se a foto capturada tem QR legível -- experimenta a imagem em
+// resolução completa e, se falhar, também a mesma escala reduzida usada
+// na deteção ao vivo. Contra-intuitivo, mas real: um código QR nem
+// sempre lê melhor em resolução total (ruído do sensor, padrões de
+// moiré) do que numa versão ligeiramente reduzida -- por isso o
+// indicador ao vivo podia mostrar "encontrado" e a foto capturada, um
+// instante depois, falhar na leitura em resolução completa. Reportado
+// pelo utilizador em teste real, 2026-09-09.
+// ---------------------------------------------------------------------
+function decodificarQrComReserva(ctx, w, h) {
+  const dadosCompletos = ctx.getImageData(0, 0, w, h);
+  if (jsQR(dadosCompletos.data, dadosCompletos.width, dadosCompletos.height)) {
+    return true;
+  }
+  const escala = Math.min(1, 960 / w);
+  if (escala >= 1) return false; // já era a resolução mais baixa possível
+  const canvasReduzido = document.createElement("canvas");
+  canvasReduzido.width = Math.round(w * escala);
+  canvasReduzido.height = Math.round(h * escala);
+  const ctxReduzido = canvasReduzido.getContext("2d");
+  ctxReduzido.drawImage(canvasCaptura, 0, 0, canvasReduzido.width, canvasReduzido.height);
+  const dadosReduzidos = ctxReduzido.getImageData(0, 0, canvasReduzido.width, canvasReduzido.height);
+  return !!jsQR(dadosReduzidos.data, dadosReduzidos.width, dadosReduzidos.height);
+}
+
+// ---------------------------------------------------------------------
 // Capturar foto -- comportamento diferente consoante o passo.
 // ---------------------------------------------------------------------
 document.getElementById("btn-capturar").addEventListener("click", capturarFoto);
@@ -164,18 +193,22 @@ function capturarFoto() {
   ctx.drawImage(video, 0, 0, w, h);
 
   if (etapaAtual === "qr") {
-    // Leitura final em resolução completa -- mais fiável do que a
-    // deteção em contínuo (que usa uma versão reduzida só para feedback
-    // rápido).
-    const dados = ctx.getImageData(0, 0, w, h);
-    qrDetetadoNaFoto = !!jsQR(dados.data, dados.width, dados.height);
+    qrDetetadoNaFoto = decodificarQrComReserva(ctx, w, h);
     pararCamara();
     canvasCaptura.toBlob(
       (blob) => {
         fotoQrBlob = blob;
         fotoPreviewQr.src = URL.createObjectURL(blob);
-        etapaAtual = "documento";
-        abrirCamara();
+        if (repetirApenasQr) {
+          // "Repetir esta foto" a partir da revisão -- só esta foto
+          // mudou, a do documento mantém-se, volta direto à revisão.
+          repetirApenasQr = false;
+          mostrarResultadoQr(qrDetetadoNaFoto);
+          mostrarTela("revisao");
+        } else {
+          etapaAtual = "documento";
+          abrirCamara();
+        }
       },
       "image/jpeg",
       0.92
@@ -210,6 +243,7 @@ function mostrarResultadoQr(detetado) {
 // ---------------------------------------------------------------------
 document.getElementById("btn-repetir-qr").addEventListener("click", () => {
   etapaAtual = "qr";
+  repetirApenasQr = true;
   abrirCamara();
 });
 
@@ -326,6 +360,7 @@ document.getElementById("btn-partilhar").addEventListener("click", async () => {
 // ---------------------------------------------------------------------
 function iniciarNovoDocumento() {
   etapaAtual = "qr";
+  repetirApenasQr = false;
   fotoQrBlob = null;
   fotoDocBlob = null;
   abrirCamara();
