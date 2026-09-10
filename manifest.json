@@ -1,7 +1,7 @@
 {
   "name": "ContaClick — Vanessa Branco",
   "short_name": "ContaClick",
-  "description": "Fotografa e envia documentos contabilísticos, com verificação automática de código QR.",
+  "description": "Fotografa e envia documentos contabilísticos, com verificação automática de código QR. / Photograph and send accounting documents, with automatic QR-code checking.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

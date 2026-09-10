@@ -24,6 +24,47 @@
 // escritório, ver _config_email.json.
 const EMAIL_DESTINO = "vb.hugo.ribeiro@gmail.com";
 
+// ---------------------------------------------------------------------
+// Idioma (PT predefinido / EN) -- ver i18n.js para a tabela de textos.
+// A escolha fica guardada no telemóvel; à primeira vez arranca na língua
+// do próprio telemóvel (inglês se o sistema estiver em inglês, senão
+// português). Pedido explícito do utilizador, 2026-09-10.
+// ---------------------------------------------------------------------
+let idioma = "pt";
+(function definirIdiomaInicial() {
+  let guardado = null;
+  try {
+    guardado = localStorage.getItem("contaclick_idioma");
+  } catch (e) {
+    /* localStorage pode estar bloqueado (janela privada, etc.) -- sem
+       problema, fica na deteção automática abaixo. */
+  }
+  if (guardado === "pt" || guardado === "en") {
+    idioma = guardado;
+    return;
+  }
+  const nav = (navigator.language || "pt").toLowerCase();
+  idioma = nav.startsWith("en") ? "en" : "pt";
+})();
+
+// t("chave") ou t("chave", { n: 3 }) para os {marcadores} do texto.
+function t(chave, params) {
+  const tabela = TRADUCOES[idioma] || TRADUCOES.pt;
+  let texto = tabela[chave];
+  if (texto == null) texto = TRADUCOES.pt[chave] != null ? TRADUCOES.pt[chave] : chave;
+  if (params) {
+    for (const k in params) {
+      texto = texto.replace(new RegExp("\\{" + k + "\\}", "g"), params[k]);
+    }
+  }
+  return texto;
+}
+
+// "1 documento" / "3 documentos" (já traduzido) -- usado no meio de outras frases.
+function fragDocs(n) {
+  return n === 1 ? t("doc_singular") : t("doc_plural", { n });
+}
+
 const telas = {
   inicio: document.getElementById("tela-inicio"),
   camara: document.getElementById("tela-camara"),
@@ -52,13 +93,16 @@ const textoInicio = document.getElementById("texto-inicio");
 const tituloLote = document.getElementById("titulo-lote");
 const listaLote = document.getElementById("lista-lote");
 
+// Qual a chave de texto de erro da câmara atualmente mostrada -- guardada
+// para que, se o cliente trocar de língua no ecrã de erro, o texto mude também.
+let ultimoErroKey = "erro_texto_inicial";
+
 document.getElementById("btn-copiar-endereco").addEventListener("click", async (evento) => {
   try {
     await navigator.clipboard.writeText(EMAIL_DESTINO);
     const btn = evento.currentTarget;
-    const original = btn.textContent;
-    btn.textContent = "Copiado!";
-    setTimeout(() => (btn.textContent = original), 1500);
+    btn.textContent = t("btn_copiado");
+    setTimeout(() => (btn.textContent = t("btn_copiar")), 1500);
   } catch (e) {
     console.error("Não consegui copiar:", e);
   }
@@ -95,6 +139,56 @@ function mostrarTela(nome) {
 }
 
 // ---------------------------------------------------------------------
+// Traduções -- aplicar aos textos fixos do HTML (data-i18n*) e refrescar
+// os textos que são construídos em runtime no ecrã que está visível.
+// ---------------------------------------------------------------------
+function aplicarTraducoesEstaticas() {
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  document.querySelectorAll("[data-i18n-html]").forEach((el) => {
+    el.innerHTML = t(el.dataset.i18nHtml);
+  });
+  document.querySelectorAll("[data-i18n-aria]").forEach((el) => {
+    el.setAttribute("aria-label", t(el.dataset.i18nAria));
+  });
+  document.querySelectorAll("[data-i18n-alt]").forEach((el) => {
+    el.setAttribute("alt", t(el.dataset.i18nAlt));
+  });
+}
+
+function refrescarEcraDinamico() {
+  const ativa = document.querySelector(".tela.ativa");
+  if (!ativa) return;
+  if (ativa.id === "tela-inicio") {
+    atualizarTextoInicio();
+  } else if (ativa.id === "tela-lote") {
+    renderizarLote();
+  } else if (ativa.id === "tela-revisao" && temQr && !cartaoQr.classList.contains("oculto")) {
+    mostrarResultadoQr(qrDetetadoNaFoto);
+  } else if (ativa.id === "tela-erro") {
+    erroTexto.textContent = t(ultimoErroKey);
+  }
+  // O ecrã da câmara não é acessível ao seletor de língua (o cabeçalho
+  // está escondido durante a câmara), por isso não precisa de refresco aqui.
+}
+
+function definirIdioma(novo) {
+  idioma = novo === "en" ? "en" : "pt";
+  try {
+    localStorage.setItem("contaclick_idioma", idioma);
+  } catch (e) {
+    /* sem persistência -- a escolha vale só para esta sessão */
+  }
+  document.documentElement.lang = idioma === "en" ? "en" : "pt-PT";
+  document.querySelectorAll(".selector-idioma button").forEach((b) => {
+    b.classList.toggle("ativo", b.dataset.idioma === idioma);
+  });
+  aplicarTraducoesEstaticas();
+  refrescarEcraDinamico();
+}
+
+// ---------------------------------------------------------------------
 // Câmara -- reaproveitada para os 2 passos, configurada de forma
 // diferente consoante etapaAtual.
 // ---------------------------------------------------------------------
@@ -104,14 +198,14 @@ async function abrirCamara() {
   molduraQr.classList.remove("detetado");
 
   if (etapaAtual === "qr") {
-    passoIndicador.textContent = "Passo 1 de 2 — Código QR";
-    dicaPasso.textContent = "Aproxima bem o telemóvel até o código QR ficar dentro do quadrado.";
+    passoIndicador.textContent = t("passo_1");
+    dicaPasso.textContent = t("dica_qr");
     molduraQr.classList.add("pequena");
-    pillTexto.textContent = "A abrir câmara...";
+    pillTexto.textContent = t("cam_abrir");
     pillEstado.classList.remove("oculto");
   } else {
-    passoIndicador.textContent = temQr ? "Passo 2 de 2 — Documento completo" : "Documento";
-    dicaPasso.textContent = "Afasta-te o suficiente para apanhar o documento completo.";
+    passoIndicador.textContent = temQr ? t("passo_2") : t("passo_doc");
+    dicaPasso.textContent = t("dica_doc");
     molduraQr.classList.remove("pequena");
     pillEstado.classList.add("oculto");
   }
@@ -130,7 +224,7 @@ async function abrirCamara() {
   await video.play();
 
   if (etapaAtual === "qr") {
-    pillTexto.textContent = "A procurar código QR...";
+    pillTexto.textContent = t("cam_procurar_qr");
     iniciarDeteccaoContinua();
   }
 }
@@ -138,12 +232,13 @@ async function abrirCamara() {
 function mostrarErroCamara(e) {
   console.error("Erro a abrir câmara:", e);
   if (e && (e.name === "NotAllowedError" || e.name === "PermissionDeniedError")) {
-    erroTexto.textContent = "Precisamos de acesso à câmara para tirar a foto. Verifica as permissões deste site nas definições do telemóvel.";
+    ultimoErroKey = "erro_perm";
   } else if (e && e.name === "NotFoundError") {
-    erroTexto.textContent = "Não encontrei nenhuma câmara neste aparelho.";
+    ultimoErroKey = "erro_sem_camara";
   } else {
-    erroTexto.textContent = "Não foi possível abrir a câmara. Tenta outra vez.";
+    ultimoErroKey = "erro_generico";
   }
+  erroTexto.textContent = t(ultimoErroKey);
   mostrarTela("erro");
 }
 
@@ -216,11 +311,11 @@ function iniciarDeteccaoContinua() {
     const dados = ctxDetecao.getImageData(0, 0, canvasDetecao.width, canvasDetecao.height);
     const resultado = tentarDecodificarQr(dados);
     if (resultado) {
-      pillTexto.textContent = "Código QR encontrado";
+      pillTexto.textContent = t("cam_qr_encontrado");
       pillEstado.classList.add("ok");
       molduraQr.classList.add("detetado");
     } else {
-      pillTexto.textContent = "A procurar código QR...";
+      pillTexto.textContent = t("cam_procurar_qr");
       pillEstado.classList.remove("ok");
       molduraQr.classList.remove("detetado");
     }
@@ -306,10 +401,10 @@ function capturarFoto() {
 function mostrarResultadoQr(detetado) {
   if (detetado) {
     resultadoQr.className = "resultado-qr ok";
-    resultadoQr.innerHTML = "✓ Código QR lido<small>Ficou bem identificado.</small>";
+    resultadoQr.innerHTML = t("qr_lido_html");
   } else {
     resultadoQr.className = "resultado-qr duvida";
-    resultadoQr.innerHTML = "⚠ QR não lido<small>Repete a 1ª foto mais perto, ou envia à mesma.</small>";
+    resultadoQr.innerHTML = t("qr_nao_lido_html");
   }
 }
 
@@ -379,7 +474,8 @@ async function construirPdfDocumento(blobDoc, blobQr) {
 // utilizador, 2026-09-09.
 // ---------------------------------------------------------------------
 function renderizarLote() {
-  tituloLote.textContent = documentos.length === 1 ? "1 documento pronto" : `${documentos.length} documentos prontos`;
+  tituloLote.textContent =
+    documentos.length === 1 ? t("lote_titulo_1") : t("lote_titulo_n", { n: documentos.length });
   listaLote.innerHTML = "";
   documentos.forEach((doc, indice) => {
     const cartao = document.createElement("div");
@@ -389,29 +485,29 @@ function renderizarLote() {
     imgWrap.className = "cartao-lote-img";
     const img = document.createElement("img");
     img.src = URL.createObjectURL(doc.fotoDocBlob);
-    img.alt = `Documento ${indice + 1}`;
+    img.alt = t("doc_item", { n: indice + 1 });
     imgWrap.appendChild(img);
 
     const info = document.createElement("div");
     info.className = "cartao-lote-info";
     const nome = document.createElement("span");
-    nome.textContent = `Documento ${indice + 1}`;
+    nome.textContent = t("doc_item", { n: indice + 1 });
     const badge = document.createElement("span");
     if (!doc.temQr) {
       badge.className = "badge-qr sem";
-      badge.textContent = "Sem código QR";
+      badge.textContent = t("badge_sem_qr");
     } else if (doc.qrDetetadoNaFoto) {
       badge.className = "badge-qr ok";
-      badge.textContent = "✓ QR lido";
+      badge.textContent = t("badge_qr_ok");
     } else {
       badge.className = "badge-qr duvida";
-      badge.textContent = "⚠ QR não lido";
+      badge.textContent = t("badge_qr_duvida");
     }
     info.append(nome, badge);
 
     const btnRemover = document.createElement("button");
     btnRemover.className = "btn-remover-lote";
-    btnRemover.setAttribute("aria-label", `Remover documento ${indice + 1}`);
+    btnRemover.setAttribute("aria-label", t("remover_aria", { n: indice + 1 }));
     btnRemover.textContent = "✕";
     btnRemover.addEventListener("click", () => {
       documentos.splice(indice, 1);
@@ -444,7 +540,7 @@ const btnPartilhar = document.getElementById("btn-partilhar");
 async function enviarLote() {
   if (documentos.length === 0) return;
   const textoOriginal = btnPartilhar.textContent;
-  btnPartilhar.textContent = "A preparar...";
+  btnPartilhar.textContent = t("preparar");
   btnPartilhar.disabled = true;
 
   const hoje = new Date().toISOString().slice(0, 10);
@@ -454,14 +550,14 @@ async function enviarLote() {
       documentos.map(async (doc, indice) => {
         const pdfBlob = await construirPdfDocumento(doc.fotoDocBlob, doc.fotoQrBlob);
         const sufixo = documentos.length > 1 ? `_${indice + 1}` : "";
-        return new File([pdfBlob], `documento_${hoje}${sufixo}.pdf`, { type: "application/pdf" });
+        return new File([pdfBlob], `${t("nome_ficheiro")}_${hoje}${sufixo}.pdf`, { type: "application/pdf" });
       })
     );
   } catch (e) {
     console.error("Erro a construir os PDFs:", e);
     btnPartilhar.textContent = textoOriginal;
     btnPartilhar.disabled = false;
-    alert("Não consegui juntar as fotos em PDF. Tenta outra vez.");
+    alert(t("erro_pdf"));
     return;
   }
 
@@ -484,8 +580,8 @@ async function enviarLote() {
     try {
       await navigator.share({
         files: ficheiros,
-        title: "Documentos",
-        text: `Documentos para a contabilidade (enviar para ${EMAIL_DESTINO}).`,
+        title: t("share_title"),
+        text: t("share_text", { email: EMAIL_DESTINO }),
       });
     } catch (e) {
       if (e && e.name === "AbortError") {
@@ -545,11 +641,11 @@ document.getElementById("btn-iniciar-sem-qr").addEventListener("click", () => in
 // lote à espera -- ver mostrarTela().
 function atualizarTextoInicio() {
   if (documentos.length > 0) {
-    tituloInicio.textContent = "Adicionar mais um documento";
-    textoInicio.textContent = `Já tens ${documentos.length === 1 ? "1 documento" : documentos.length + " documentos"} no envio. Este novo tem código QR ou não?`;
+    tituloInicio.textContent = t("inicio_titulo_mais");
+    textoInicio.textContent = t("inicio_texto_mais", { docs: fragDocs(documentos.length) });
   } else {
-    tituloInicio.textContent = "ContaClick";
-    textoInicio.textContent = "O documento tem código QR (fatura, recibo...) ou não (guia da AT, outro papel qualquer)?";
+    tituloInicio.textContent = t("inicio_titulo");
+    textoInicio.textContent = t("inicio_texto");
   }
 }
 
@@ -566,6 +662,14 @@ document.getElementById("btn-terminar").addEventListener("click", () => {
 });
 
 document.getElementById("btn-tentar-de-novo").addEventListener("click", abrirCamara);
+
+// ---------------------------------------------------------------------
+// Seletor de língua (PT / EN) -- ver definirIdioma() e i18n.js.
+// ---------------------------------------------------------------------
+document.querySelectorAll(".selector-idioma button").forEach((b) => {
+  b.addEventListener("click", () => definirIdioma(b.dataset.idioma));
+});
+definirIdioma(idioma); // aplica a língua inicial (guardada ou a do telemóvel)
 
 // ---------------------------------------------------------------------
 // Service worker (instalação da PWA / cache básica)

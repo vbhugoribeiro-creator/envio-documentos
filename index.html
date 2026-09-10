@@ -57,18 +57,19 @@
     flex-shrink:0;
     display:flex;
     align-items:center;
-    justify-content:center;
+    justify-content:space-between;
     gap:10px;
   }
   /* Ver mostrarTela() em app.js -- ganha espaço vertical precioso durante
-     a câmara, onde a marca não faz falta nenhuma. */
+     a câmara, onde a marca (e o seletor de língua) não fazem falta nenhuma. */
   body.camara-ativa header.topo{display:none;}
+  .marca-bloco{display:flex; align-items:center; gap:10px; min-width:0;}
   header.topo .logo-app{
     width:38px; height:38px;
     border-radius:10px;
     flex-shrink:0;
   }
-  header.topo .marca-textos{text-align:left;}
+  header.topo .marca-textos{text-align:left; min-width:0;}
   header.topo .marca{
     font-size:15px;
     font-weight:700;
@@ -79,6 +80,20 @@
     font-size:10.5px;
     color:var(--muted);
     margin-top:1px;
+  }
+  .selector-idioma{display:flex; gap:4px; flex-shrink:0;}
+  .selector-idioma button{
+    background:none;
+    border:1px solid var(--navy-700);
+    color:var(--muted);
+    font-size:12px; font-weight:700;
+    padding:5px 9px;
+    border-radius:8px;
+  }
+  .selector-idioma button.ativo{
+    background:var(--gold);
+    color:var(--navy-900);
+    border-color:var(--gold);
   }
   .tela{
     display:none;
@@ -317,36 +332,42 @@
 <body>
 <div class="app">
   <header class="topo">
-    <img class="logo-app" src="icon-192.png" alt="">
-    <div class="marca-textos">
-      <div class="marca">ContaClick</div>
-      <div class="marca-sub">Vanessa Branco — Accounting and Finance</div>
+    <div class="marca-bloco">
+      <img class="logo-app" src="icon-192.png" alt="">
+      <div class="marca-textos">
+        <div class="marca">ContaClick</div>
+        <div class="marca-sub" data-i18n="marca_sub">Vanessa Branco — Contabilidade e Finanças</div>
+      </div>
+    </div>
+    <div class="selector-idioma" role="group" aria-label="Idioma / Language">
+      <button type="button" data-idioma="pt">PT</button>
+      <button type="button" data-idioma="en">EN</button>
     </div>
   </header>
 
   <!-- TELA: Início -->
   <section id="tela-inicio" class="tela ativa">
     <img class="icone-camara-grande" src="icon-512.png" alt="ContaClick">
-    <h1 id="titulo-inicio">ContaClick</h1>
-    <p id="texto-inicio">O documento tem código QR (fatura, recibo...) ou não (guia da AT, outro papel qualquer)?</p>
+    <h1 id="titulo-inicio" data-i18n="inicio_titulo">ContaClick</h1>
+    <p id="texto-inicio" data-i18n="inicio_texto">O documento tem código QR (fatura, recibo...) ou não (guia da AT, outro papel qualquer)?</p>
     <div class="botoes-inicio">
-      <button class="btn-principal btn-full" id="btn-iniciar-com-qr">Com código QR<small>2 fotos: QR + documento</small></button>
-      <button class="btn-secundario btn-full" id="btn-iniciar-sem-qr">Sem código QR<small>1 foto só do documento</small></button>
+      <button class="btn-principal btn-full" id="btn-iniciar-com-qr" data-i18n-html="btn_com_qr_html">Com código QR<small>2 fotos: QR + documento</small></button>
+      <button class="btn-secundario btn-full" id="btn-iniciar-sem-qr" data-i18n-html="btn_sem_qr_html">Sem código QR<small>1 foto só do documento</small></button>
     </div>
-    <button class="btn-instalar oculto" id="btn-instalar">📌 Fixar app no ecrã principal</button>
-    <p class="nota-instalar-ios oculto" id="nota-instalar-ios">Para fixares no ecrã principal: toca em <strong>Partilhar</strong> (⬆) e depois em <strong>"Adicionar ao Ecrã Principal"</strong>.</p>
+    <button class="btn-instalar oculto" id="btn-instalar" data-i18n="btn_instalar">📌 Fixar app no ecrã principal</button>
+    <p class="nota-instalar-ios oculto" id="nota-instalar-ios" data-i18n-html="nota_instalar_ios_html">Para fixares no ecrã principal: toca em <strong>Partilhar</strong> (⬆) e depois em <strong>"Adicionar ao Ecrã Principal"</strong>.</p>
   </section>
 
   <!-- TELA: Câmara (reaproveitada para os 2 passos -- ver app.js, etapaAtual) -->
   <section id="tela-camara" class="tela">
-    <div class="passo-indicador" id="passo-indicador">Passo 1 de 2 — Código QR</div>
+    <div class="passo-indicador" id="passo-indicador" data-i18n="passo_1">Passo 1 de 2 — Código QR</div>
     <div class="video-wrap">
       <video id="video" autoplay playsinline muted></video>
       <div class="moldura-qr" id="moldura-qr"></div>
-      <div class="pill-estado" id="pill-estado"><span class="ponto"></span><span id="pill-texto">A abrir câmara...</span></div>
+      <div class="pill-estado" id="pill-estado"><span class="ponto"></span><span id="pill-texto" data-i18n="cam_abrir">A abrir câmara...</span></div>
     </div>
-    <p class="dica-passo" id="dica-passo">Aproxima bem o telemóvel até o código QR ficar dentro do quadrado.</p>
-    <button class="btn-capturar" id="btn-capturar" aria-label="Tirar foto"></button>
+    <p class="dica-passo" id="dica-passo" data-i18n="dica_qr">Aproxima bem o telemóvel até o código QR ficar dentro do quadrado.</p>
+    <button class="btn-capturar" id="btn-capturar" data-i18n-aria="captura_aria" aria-label="Tirar foto"></button>
   </section>
 
   <!-- TELA: Revisão -->
@@ -354,42 +375,42 @@
     <div class="cartoes-fotos">
       <div class="cartao-foto" id="cartao-qr">
         <div class="cartao-foto-img-wrap pequeno">
-          <img id="foto-preview-qr" alt="Código QR fotografado">
+          <img id="foto-preview-qr" data-i18n-alt="foto_qr_alt" alt="Código QR fotografado">
         </div>
         <div class="cartao-foto-info">
           <div class="resultado-qr" id="resultado-qr"></div>
-          <button class="btn-link" id="btn-repetir-qr">↺ Repetir esta foto</button>
+          <button class="btn-link" id="btn-repetir-qr" data-i18n="btn_repetir_foto">↺ Repetir esta foto</button>
         </div>
       </div>
       <div class="cartao-foto">
         <div class="cartao-foto-img-wrap">
-          <img id="foto-preview-doc" alt="Documento completo fotografado">
+          <img id="foto-preview-doc" data-i18n-alt="foto_doc_alt" alt="Documento completo fotografado">
         </div>
         <div class="cartao-foto-info">
-          <span class="rotulo-cartao">Documento completo</span>
-          <button class="btn-link" id="btn-repetir-doc">↺ Repetir esta foto</button>
+          <span class="rotulo-cartao" data-i18n="rotulo_doc_completo">Documento completo</span>
+          <button class="btn-link" id="btn-repetir-doc" data-i18n="btn_repetir_foto">↺ Repetir esta foto</button>
         </div>
       </div>
     </div>
     <div class="botoes">
-      <button class="btn-principal btn-full" id="btn-adicionar-lote">✓ Adicionar ao envio</button>
+      <button class="btn-principal btn-full" id="btn-adicionar-lote" data-i18n="btn_adicionar_lote">✓ Adicionar ao envio</button>
     </div>
   </section>
 
   <!-- TELA: Lote (documentos prontos, à espera de serem enviados juntos) -->
   <section id="tela-lote" class="tela">
-    <h1 id="titulo-lote">1 documento pronto</h1>
+    <h1 id="titulo-lote" data-i18n="lote_titulo_1">1 documento pronto</h1>
     <div class="lista-lote" id="lista-lote"></div>
-    <button class="btn-secundario btn-full" id="btn-adicionar-outro">+ Adicionar outro documento</button>
+    <button class="btn-secundario btn-full" id="btn-adicionar-outro" data-i18n="btn_adicionar_outro">+ Adicionar outro documento</button>
     <div class="caixa-endereco">
-      <span>Enviar para:</span>
+      <span data-i18n="enviar_para">Enviar para:</span>
       <strong id="endereco-envio"></strong>
-      <button class="btn-copiar" id="btn-copiar-endereco" aria-label="Copiar endereço">Copiar</button>
+      <button class="btn-copiar" id="btn-copiar-endereco" data-i18n="btn_copiar" data-i18n-aria="copiar_aria" aria-label="Copiar endereço">Copiar</button>
     </div>
     <div class="botoes">
-      <button class="btn-principal btn-full" id="btn-partilhar">Enviar tudo »</button>
+      <button class="btn-principal btn-full" id="btn-partilhar" data-i18n="btn_partilhar">Enviar tudo »</button>
     </div>
-    <p class="nota-envio">Toca em "Enviar tudo" e escolhe o <strong>Gmail</strong> (ou Mail) na lista que aparece — não o WhatsApp, para o(s) documento(s) chegar(em) ao escritório. Confirma o destinatário acima antes de enviares (o telemóvel não o preenche sozinho).</p>
+    <p class="nota-envio" data-i18n-html="nota_envio_html">Toca em "Enviar tudo" e escolhe o <strong>Gmail</strong> (ou Mail) na lista que aparece — não o WhatsApp, para o(s) documento(s) chegar(em) ao escritório. Confirma o destinatário acima antes de enviares (o telemóvel não o preenche sozinho).</p>
   </section>
 
   <!-- TELA: Concluído -->
@@ -399,19 +420,19 @@
         <path d="M4.5 12.5l5 5 10-11" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </div>
-    <h1>Documentos preparados</h1>
-    <p>Se já escolheste o Gmail/Mail e confirmaste o destinatário, está enviado. Se ainda não enviaste, os PDFs continuam prontos para partilhar.</p>
+    <h1 data-i18n="concluido_titulo">Documentos preparados</h1>
+    <p data-i18n="concluido_texto">Se já escolheste o Gmail/Mail e confirmaste o destinatário, está enviado. Se ainda não enviaste, os PDFs continuam prontos para partilhar.</p>
     <div class="botoes botoes-concluido">
-      <button class="btn-principal btn-full" id="btn-novo-documento">Fotografar outro documento</button>
-      <button class="btn-secundario btn-full" id="btn-terminar">Terminar</button>
+      <button class="btn-principal btn-full" id="btn-novo-documento" data-i18n="btn_novo_documento">Fotografar outro documento</button>
+      <button class="btn-secundario btn-full" id="btn-terminar" data-i18n="btn_terminar">Terminar</button>
     </div>
   </section>
 
   <!-- TELA: Erro -->
   <section id="tela-erro" class="tela">
-    <h1>Não consegui aceder à câmara</h1>
-    <p id="erro-texto">Verifica se deste permissão de câmara a este site nas definições do telemóvel, e tenta outra vez.</p>
-    <button class="btn-principal" id="btn-tentar-de-novo">Tentar de novo</button>
+    <h1 data-i18n="erro_titulo">Não consegui aceder à câmara</h1>
+    <p id="erro-texto" data-i18n="erro_texto_inicial">Verifica se deste permissão de câmara a este site nas definições do telemóvel, e tenta outra vez.</p>
+    <button class="btn-principal" id="btn-tentar-de-novo" data-i18n="btn_tentar_de_novo">Tentar de novo</button>
   </section>
 
   <footer class="rodape">made by Hugo Ribeiro</footer>
@@ -420,6 +441,7 @@
 <canvas id="canvas-captura" class="oculto"></canvas>
 <script src="jsQR.js"></script>
 <script src="jspdf.umd.min.js"></script>
+<script src="i18n.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
