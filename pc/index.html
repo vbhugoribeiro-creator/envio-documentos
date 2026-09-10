@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ContaClick PC — Vanessa Branco</title>
+<meta name="theme-color" content="#0f2636">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="icon-apple-touch.png">
+<style>
+  :root{
+    --navy-900:#0a1c29;
+    --navy-800:#102a3c;
+    --navy-700:#173d55;
+    --gold:#ceab6d;
+    --gold-light:#e4c893;
+    --white:#f6f9fb;
+    --muted:#9db2c0;
+    --ok:#5fb98a;
+    --warn:#e0a541;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:linear-gradient(180deg,var(--navy-900),var(--navy-800) 60%);
+    color:var(--white);
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+  }
+  .app{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    max-width:640px;
+    margin:0 auto;
+    width:100%;
+    padding:0 24px;
+  }
+  header.topo{
+    padding:22px 0 14px;
+    flex-shrink:0;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+  }
+  .marca-bloco{display:flex; align-items:center; gap:12px; min-width:0;}
+  header.topo .logo-app{width:42px; height:42px; border-radius:11px; flex-shrink:0;}
+  header.topo .marca-textos{text-align:left; min-width:0;}
+  header.topo .marca{font-size:17px; font-weight:700; color:var(--white); line-height:1.2;}
+  header.topo .marca-sub{font-size:11.5px; color:var(--muted); margin-top:1px;}
+  .selector-idioma{display:flex; gap:4px; flex-shrink:0;}
+  .selector-idioma button{
+    background:none;
+    border:1px solid var(--navy-700);
+    color:var(--muted);
+    font-size:12px; font-weight:700;
+    padding:6px 10px;
+    border-radius:8px;
+    cursor:pointer;
+  }
+  .selector-idioma button.ativo{
+    background:var(--gold);
+    color:var(--navy-900);
+    border-color:var(--gold);
+  }
+
+  .tela{display:none; flex:1; min-height:0; flex-direction:column;}
+  .tela.ativa{display:flex;}
+
+  /* --- Início --- */
+  #tela-inicio{justify-content:center; text-align:center; gap:18px; padding:12px 0 28px;}
+  .icone-grande{
+    width:78px; height:78px; margin:0 auto;
+    border-radius:20px; display:block;
+    box-shadow:0 8px 24px rgba(0,0,0,.35);
+  }
+  #tela-inicio h1{font-size:23px; margin:0; font-weight:700;}
+  #tela-inicio p.sub{color:var(--muted); font-size:14.5px; line-height:1.55; margin:0; max-width:46ch; margin-inline:auto;}
+
+  .drop-zona{
+    border:2px dashed var(--navy-700);
+    border-radius:18px;
+    padding:38px 24px;
+    display:flex; flex-direction:column; align-items:center; gap:12px;
+    cursor:pointer;
+    transition:border-color .15s, background .15s;
+    background:rgba(23,61,85,.18);
+  }
+  .drop-zona:hover{border-color:var(--gold);}
+  .drop-zona.arrastando{border-color:var(--gold); background:rgba(206,171,109,.12);}
+  .drop-zona .icone-clip{font-size:34px;}
+  .drop-zona .linha1{font-size:15.5px; font-weight:700;}
+  .drop-zona .linha2{font-size:13px; color:var(--muted);}
+
+  /* --- Lote --- */
+  #tela-lote{gap:14px; padding:18px 0 10px; overflow-y:auto;}
+  #tela-lote h1{font-size:19px; margin:0; font-weight:700; text-align:center;}
+  .lista-lote{display:flex; flex-direction:column; gap:10px;}
+  .cartao-lote{
+    background:var(--navy-800);
+    border-radius:13px;
+    padding:12px 14px;
+    display:flex; align-items:center; gap:12px;
+  }
+  .cartao-lote .ic{
+    flex:0 0 38px; height:38px;
+    border-radius:9px; background:var(--navy-700);
+    display:flex; align-items:center; justify-content:center;
+    font-size:17px;
+  }
+  .cartao-lote-info{flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;}
+  .cartao-lote-info .nome{
+    font-size:13.5px; font-weight:700;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .cartao-lote-info .meta{font-size:11.5px; color:var(--muted);}
+  .cartao-lote-info .meta.convertido{color:var(--gold);}
+  .btn-remover-lote{
+    background:none; border:none; color:var(--muted);
+    font-size:17px; padding:4px 8px; flex-shrink:0; cursor:pointer;
+  }
+  .btn-remover-lote:hover{color:var(--warn);}
+
+  .caixa-endereco{
+    display:flex; align-items:center; gap:10px;
+    background:var(--navy-800);
+    border-radius:12px;
+    padding:12px 14px;
+    font-size:13px;
+  }
+  .caixa-endereco > span{color:var(--muted); flex-shrink:0;}
+  .caixa-endereco strong{
+    color:var(--white); font-weight:700;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;
+  }
+  .btn-copiar{
+    background:var(--navy-700); color:var(--gold);
+    border:none; border-radius:8px; padding:7px 11px;
+    font-size:12px; font-weight:700; flex-shrink:0; cursor:pointer;
+  }
+
+  .botoes{display:flex; gap:10px; padding:8px 0 6px;}
+  .nota{
+    text-align:center; font-size:12px; color:var(--muted);
+    line-height:1.5; margin:0 0 18px; padding:0 6px;
+  }
+  ol.passos{
+    margin:0 0 8px; padding-left:22px;
+    font-size:13.5px; line-height:1.65; color:var(--white);
+  }
+  ol.passos strong{color:var(--gold-light);}
+
+  button{
+    font-family:inherit;
+    border:none; border-radius:13px;
+    padding:15px 18px;
+    font-size:15px; font-weight:700;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  button:active{transform:scale(.985);}
+  .btn-principal{background:var(--gold); color:var(--navy-900); flex:1;}
+  .btn-principal:hover{background:var(--gold-light);}
+  .btn-secundario{background:var(--navy-700); color:var(--white);}
+  .btn-secundario:hover{background:var(--navy-800);}
+  .btn-full{width:100%;}
+  button:disabled{opacity:.6; cursor:default;}
+
+  /* --- Enviar manual / Concluído --- */
+  #tela-manual{gap:16px; padding:22px 0 10px;}
+  #tela-manual h1{font-size:20px; margin:0; font-weight:700; text-align:center;}
+  #tela-concluido{justify-content:center; text-align:center; gap:16px;}
+  #tela-concluido h1{font-size:22px; margin:0; font-weight:700;}
+  #tela-concluido p{color:var(--muted); font-size:14.5px; line-height:1.5; margin:0; max-width:44ch; margin-inline:auto;}
+  .botoes-col{flex-direction:column;}
+
+  footer.rodape{
+    text-align:center;
+    padding:14px 0 16px;
+    font-size:11px;
+    color:var(--muted);
+    flex-shrink:0;
+  }
+  .oculto{display:none !important;}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topo">
+    <div class="marca-bloco">
+      <img class="logo-app" src="icon-192.png" alt="">
+      <div class="marca-textos">
+        <div class="marca">ContaClick</div>
+        <div class="marca-sub" data-i18n="marca_sub">Vanessa Branco — Contabilidade e Finanças</div>
+      </div>
+    </div>
+    <div class="selector-idioma" role="group" aria-label="Idioma / Language">
+      <button type="button" data-idioma="pt">PT</button>
+      <button type="button" data-idioma="en">EN</button>
+    </div>
+  </header>
+
+  <!-- TELA: Início -->
+  <section id="tela-inicio" class="tela ativa">
+    <img class="icone-grande" src="icon-512.png" alt="ContaClick">
+    <h1 data-i18n="inicio_titulo">Enviar documentos para a contabilidade</h1>
+    <p class="sub" data-i18n="inicio_texto">Escolhe os ficheiros do teu computador — faturas, recibos, guias, extratos. Aceita PDF e imagens.</p>
+    <div class="drop-zona" id="drop-zona" tabindex="0" role="button" data-i18n-aria="drop_aria" aria-label="Escolher ficheiros">
+      <div class="icone-clip">📎</div>
+      <div class="linha1" data-i18n="drop_linha1">Arrasta ficheiros para aqui</div>
+      <div class="linha2" data-i18n="drop_linha2">ou clica para escolher no computador</div>
+    </div>
+    <input type="file" id="input-ficheiros" multiple accept=".pdf,image/*" class="oculto">
+  </section>
+
+  <!-- TELA: Lote -->
+  <section id="tela-lote" class="tela">
+    <h1 id="titulo-lote" data-i18n="lote_titulo_1">1 documento pronto</h1>
+    <div class="lista-lote" id="lista-lote"></div>
+    <button class="btn-secundario btn-full" id="btn-adicionar-outro" data-i18n="btn_adicionar_outro">+ Adicionar mais ficheiros</button>
+    <div class="caixa-endereco">
+      <span data-i18n="enviar_para">Enviar para:</span>
+      <strong id="endereco-envio"></strong>
+      <button class="btn-copiar" id="btn-copiar-endereco" data-i18n="btn_copiar" data-i18n-aria="copiar_aria" aria-label="Copiar endereço">Copiar</button>
+    </div>
+    <div class="botoes">
+      <button class="btn-principal btn-full" id="btn-enviar" data-i18n="btn_enviar">Enviar tudo »</button>
+    </div>
+    <p class="nota" data-i18n="nota_lote">As imagens são convertidas para PDF; os PDF seguem tal como estão.</p>
+  </section>
+
+  <!-- TELA: Envio manual (quando o browser não tem partilha de ficheiros) -->
+  <section id="tela-manual" class="tela">
+    <h1 data-i18n="manual_titulo">Ficheiros descarregados</h1>
+    <ol class="passos">
+      <li data-i18n-html="manual_p1_html">Os <strong>ficheiros</strong> foram guardados na pasta <strong>Transferências</strong>.</li>
+      <li data-i18n-html="manual_p2_html">Abre o teu email e cria uma <strong>mensagem nova</strong> para o endereço abaixo.</li>
+      <li data-i18n-html="manual_p3_html">Anexa os ficheiros descarregados e <strong>envia</strong>.</li>
+    </ol>
+    <div class="caixa-endereco">
+      <span data-i18n="enviar_para">Enviar para:</span>
+      <strong id="endereco-envio-2"></strong>
+      <button class="btn-copiar" id="btn-copiar-endereco-2" data-i18n="btn_copiar" aria-label="Copiar endereço">Copiar</button>
+    </div>
+    <div class="botoes botoes-col">
+      <button class="btn-principal btn-full" id="btn-abrir-email" data-i18n="btn_abrir_email">Abrir o email</button>
+      <button class="btn-secundario btn-full" id="btn-manual-terminei" data-i18n="btn_ja_enviei">Já enviei — terminar</button>
+    </div>
+    <p class="nota" data-i18n="nota_manual">O botão "Abrir o email" só preenche o destinatário e o assunto — os anexos tens de os arrastar tu (o browser não deixa anexar sozinho).</p>
+  </section>
+
+  <!-- TELA: Concluído -->
+  <section id="tela-concluido" class="tela">
+    <div class="icone-grande" style="box-shadow:none; display:flex; align-items:center; justify-content:center;">
+      <svg viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="#ceab6d" stroke-width="1.8">
+        <path d="M4.5 12.5l5 5 10-11" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h1 data-i18n="concluido_titulo">Enviado</h1>
+    <p data-i18n="concluido_texto">Os documentos foram partilhados. Se ainda não escolheste a app de email, os ficheiros continuam prontos.</p>
+    <div class="botoes botoes-col">
+      <button class="btn-principal btn-full" id="btn-novo" data-i18n="btn_novo">Enviar mais documentos</button>
+      <button class="btn-secundario btn-full" id="btn-terminar" data-i18n="btn_terminar">Terminar</button>
+    </div>
+  </section>
+
+  <footer class="rodape">made by Hugo Ribeiro</footer>
+</div>
+
+<script src="jspdf.umd.min.js"></script>
+<script src="i18n.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
