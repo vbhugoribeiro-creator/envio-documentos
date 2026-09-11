@@ -24,7 +24,9 @@ const TRADUCOES = {
     // --- Lote ---
     lote_titulo_1: "1 documento pronto",
     lote_titulo_n: "{n} documentos prontos",
-    btn_adicionar_outro: "+ Adicionar mais ficheiros",
+    drop_mais_linha1: "Arrasta mais ficheiros para aqui",
+    drop_mais_linha2: "ou clica para escolher",
+    drop_mais_aria: "Adicionar mais ficheiros",
     enviar_para: "Enviar para:",
     btn_copiar: "Copiar",
     btn_copiado: "Copiado!",
@@ -85,7 +87,9 @@ const TRADUCOES = {
     // --- Batch ---
     lote_titulo_1: "1 document ready",
     lote_titulo_n: "{n} documents ready",
-    btn_adicionar_outro: "+ Add more files",
+    drop_mais_linha1: "Drag more files here",
+    drop_mais_linha2: "or click to choose",
+    drop_mais_aria: "Add more files",
     enviar_para: "Send to:",
     btn_copiar: "Copy",
     btn_copiado: "Copied!",

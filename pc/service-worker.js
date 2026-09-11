@@ -5,7 +5,7 @@
 // IMPORTANTE: subir este número sempre que se publicar uma alteração --
 // é o que faz o browser trocar para o service worker novo. Sem isto,
 // quem já tinha a app aberta continuava a ver a versão antiga em cache.
-const CACHE_NOME = "contaclick-pc-v2";
+const CACHE_NOME = "contaclick-pc-v3";
 const FICHEIROS_CASCA = [
   "./",
   "./index.html",

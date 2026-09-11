@@ -96,6 +96,17 @@
   .drop-zona .icone-clip{font-size:34px;}
   .drop-zona .linha1{font-size:15.5px; font-weight:700;}
   .drop-zona .linha2{font-size:13px; color:var(--muted);}
+  /* Versão compacta -- dentro do ecrã do lote, para continuar a aceitar
+     arrastar mais ficheiros sem ter de abrir o explorador de ficheiros
+     (pedido explícito do utilizador, 2026-09-11: "se não tem que abrir
+     uma janela do explorer e isso não é prático"). */
+  .drop-zona.compacta{
+    flex-direction:row; justify-content:center;
+    padding:14px 16px; gap:10px;
+  }
+  .drop-zona.compacta .icone-clip{font-size:20px;}
+  .drop-zona.compacta .linha1{font-size:13.5px;}
+  .drop-zona.compacta .linha2{font-size:12px;}
 
   /* --- Lote --- */
   #tela-lote{gap:14px; padding:18px 0 10px; overflow-y:auto;}
@@ -233,7 +244,11 @@
   <section id="tela-lote" class="tela">
     <h1 id="titulo-lote" data-i18n="lote_titulo_1">1 documento pronto</h1>
     <div class="lista-lote" id="lista-lote"></div>
-    <button class="btn-secundario btn-full" id="btn-adicionar-outro" data-i18n="btn_adicionar_outro">+ Adicionar mais ficheiros</button>
+    <div class="drop-zona compacta" id="drop-zona-lote" tabindex="0" role="button" data-i18n-aria="drop_mais_aria" aria-label="Adicionar mais ficheiros">
+      <span class="icone-clip">📎</span>
+      <span class="linha1" data-i18n="drop_mais_linha1">Arrasta mais ficheiros para aqui</span>
+      <span class="linha2" data-i18n="drop_mais_linha2">ou clica para escolher</span>
+    </div>
     <div class="caixa-endereco">
       <span data-i18n="enviar_para">Enviar para:</span>
       <strong id="endereco-envio"></strong>
@@ -266,7 +281,7 @@
       <strong id="endereco-envio-2"></strong>
       <button class="btn-copiar" id="btn-copiar-endereco-2" data-i18n="btn_copiar" aria-label="Copiar endereço">Copiar</button>
     </div>
-    <div class="botoes botoes-col">
+    <div class="botoes botoes-col" id="bloco-abrir-email">
       <button class="btn-secundario btn-full" id="btn-abrir-email" data-i18n="btn_abrir_email">Abrir o email</button>
     </div>
     <p class="nota" id="confirmar-nota" data-i18n="nota_manual">O botão "Abrir o email" só preenche o destinatário e o assunto — os anexos tens de os arrastar tu (o browser não deixa anexar sozinho).</p>

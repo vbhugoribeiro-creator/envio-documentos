@@ -124,39 +124,50 @@ function definirIdioma(novo) {
 }
 
 // ---------------------------------------------------------------------
-// Escolher / arrastar ficheiros
+// Escolher / arrastar ficheiros -- a mesma zona de arrastar fica
+// disponível tanto no ecrã inicial como no ecrã do lote (versão
+// compacta), para se poder continuar a arrastar mais ficheiros sem
+// precisar de abrir o explorador de ficheiros a cada vez. Pedido
+// explícito do utilizador, 2026-09-11: "depois de colocar 1 pdf, a
+// janela para arrastar deveria lá continuar, se não tem que abrir uma
+// janela do explorer e isso não é prático".
 // ---------------------------------------------------------------------
-dropZona.addEventListener("click", () => inputFicheiros.click());
-dropZona.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" || e.key === " ") {
-    e.preventDefault();
-    inputFicheiros.click();
-  }
-});
+function tornarZonaDeDrop(zona) {
+  zona.addEventListener("click", () => inputFicheiros.click());
+  zona.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      inputFicheiros.click();
+    }
+  });
+  ["dragenter", "dragover"].forEach((ev) =>
+    zona.addEventListener(ev, (e) => {
+      e.preventDefault();
+      zona.classList.add("arrastando");
+    })
+  );
+  ["dragleave", "drop"].forEach((ev) =>
+    zona.addEventListener(ev, (e) => {
+      e.preventDefault();
+      if (ev === "dragleave" && zona.contains(e.relatedTarget)) return;
+      zona.classList.remove("arrastando");
+    })
+  );
+  zona.addEventListener("drop", (e) => {
+    if (e.dataTransfer && e.dataTransfer.files) adicionarFicheiros(e.dataTransfer.files);
+  });
+}
+tornarZonaDeDrop(dropZona);
+tornarZonaDeDrop(document.getElementById("drop-zona-lote"));
+
 inputFicheiros.addEventListener("change", () => {
   adicionarFicheiros(inputFicheiros.files);
   inputFicheiros.value = ""; // permite re-escolher o mesmo ficheiro
 });
 
-["dragenter", "dragover"].forEach((ev) =>
-  dropZona.addEventListener(ev, (e) => {
-    e.preventDefault();
-    dropZona.classList.add("arrastando");
-  })
-);
-["dragleave", "drop"].forEach((ev) =>
-  dropZona.addEventListener(ev, (e) => {
-    e.preventDefault();
-    if (ev === "dragleave" && dropZona.contains(e.relatedTarget)) return;
-    dropZona.classList.remove("arrastando");
-  })
-);
-dropZona.addEventListener("drop", (e) => {
-  if (e.dataTransfer && e.dataTransfer.files) adicionarFicheiros(e.dataTransfer.files);
-});
-
-// A página toda também aceita drop (mais tolerante do que só a zona) --
-// evita o browser abrir o ficheiro se o cliente falhar a mira.
+// A página toda também aceita drop (mais tolerante do que só as zonas,
+// em qualquer ecrã) -- evita o browser abrir o ficheiro se o cliente
+// falhar a mira da zona.
 ["dragover", "drop"].forEach((ev) =>
   window.addEventListener(ev, (e) => {
     e.preventDefault();
@@ -236,8 +247,6 @@ function renderizarLote() {
   });
 }
 
-document.getElementById("btn-adicionar-outro").addEventListener("click", () => inputFicheiros.click());
-
 // ---------------------------------------------------------------------
 // Confirmar envio -- nem a partilha nativa (navigator.share) nem o
 // download resolvem sozinhos "foi mesmo enviado": o share() resolve só
@@ -255,6 +264,11 @@ function aplicarTextoConfirmar() {
   confirmarTextoShare.classList.toggle("oculto", !ehShare);
   confirmarTitulo.textContent = ehShare ? t("confirmar_titulo_share") : t("manual_titulo");
   confirmarNota.textContent = ehShare ? t("nota_confirmar_share") : t("nota_manual");
+  // "Abrir o email" só faz sentido depois de ter descarregado ficheiros
+  // (modo manual) -- em modo partilha nada foi descarregado, e abrir um
+  // mailto: sem anexo nenhum só confundia (mesma lição já aprendida na
+  // app do telemóvel: "mailto: nunca anexava o ficheiro").
+  document.getElementById("bloco-abrir-email").classList.toggle("oculto", ehShare);
 }
 
 function mostrarConfirmar(modo) {
