@@ -70,6 +70,7 @@ const telas = {
   camara: document.getElementById("tela-camara"),
   revisao: document.getElementById("tela-revisao"),
   lote: document.getElementById("tela-lote"),
+  confirmar: document.getElementById("tela-confirmar"),
   concluido: document.getElementById("tela-concluido"),
   erro: document.getElementById("tela-erro"),
 };
@@ -92,21 +93,32 @@ const tituloInicio = document.getElementById("titulo-inicio");
 const textoInicio = document.getElementById("texto-inicio");
 const tituloLote = document.getElementById("titulo-lote");
 const listaLote = document.getElementById("lista-lote");
+const enderecoEnvioConfirmar = document.getElementById("endereco-envio-confirmar");
+enderecoEnvioConfirmar.textContent = EMAIL_DESTINO;
+const confirmarPassos = document.getElementById("confirmar-passos");
+const confirmarTextoShare = document.getElementById("confirmar-texto-share");
+const confirmarTitulo = document.getElementById("confirmar-titulo");
+const confirmarNota = document.getElementById("confirmar-nota");
+const blocoAbrirEmail = document.getElementById("bloco-abrir-email");
 
 // Qual a chave de texto de erro da câmara atualmente mostrada -- guardada
 // para que, se o cliente trocar de língua no ecrã de erro, o texto mude também.
 let ultimoErroKey = "erro_texto_inicial";
 
-document.getElementById("btn-copiar-endereco").addEventListener("click", async (evento) => {
-  try {
-    await navigator.clipboard.writeText(EMAIL_DESTINO);
-    const btn = evento.currentTarget;
-    btn.textContent = t("btn_copiado");
-    setTimeout(() => (btn.textContent = t("btn_copiar")), 1500);
-  } catch (e) {
-    console.error("Não consegui copiar:", e);
-  }
-});
+function ligarCopiar(idBotao) {
+  document.getElementById(idBotao).addEventListener("click", async (evento) => {
+    try {
+      await navigator.clipboard.writeText(EMAIL_DESTINO);
+      const btn = evento.currentTarget;
+      btn.textContent = t("btn_copiado");
+      setTimeout(() => (btn.textContent = t("btn_copiar")), 1500);
+    } catch (e) {
+      console.error("Não consegui copiar:", e);
+    }
+  });
+}
+ligarCopiar("btn-copiar-endereco");
+ligarCopiar("btn-copiar-endereco-confirmar");
 
 let streamAtual = null;
 let intervaloDeteccao = null;
@@ -168,6 +180,8 @@ function refrescarEcraDinamico() {
     mostrarResultadoQr(qrDetetadoNaFoto);
   } else if (ativa.id === "tela-erro") {
     erroTexto.textContent = t(ultimoErroKey);
+  } else if (ativa.id === "tela-confirmar") {
+    aplicarTextoConfirmar();
   }
   // O ecrã da câmara não é acessível ao seletor de língua (o cabeçalho
   // está escondido durante a câmara), por isso não precisa de refresco aqui.
@@ -535,6 +549,46 @@ document.getElementById("btn-adicionar-outro").addEventListener("click", () => {
   mostrarTela("inicio");
 });
 
+// ---------------------------------------------------------------------
+// Confirmar envio -- o mesmo bug que já existia aqui: navigator.share()
+// resolve logo que a app de email/Gmail abre com os ficheiros anexados,
+// não quando o cliente toca mesmo em "Enviar" lá dentro. Se ele voltar
+// atrás sem enviar, esta app não tem forma de saber -- por isso nunca se
+// assume "enviado" sem confirmação explícita aqui. Pedido explícito do
+// utilizador, 2026-09-11 (mesmo problema já corrigido na versão PC).
+// ---------------------------------------------------------------------
+let modoConfirmarAtual = "manual"; // "manual" | "share"
+
+function aplicarTextoConfirmar() {
+  const ehShare = modoConfirmarAtual === "share";
+  confirmarPassos.classList.toggle("oculto", ehShare);
+  confirmarTextoShare.classList.toggle("oculto", !ehShare);
+  confirmarTitulo.textContent = ehShare ? t("confirmar_titulo_share") : t("manual_titulo");
+  confirmarNota.textContent = ehShare ? t("nota_confirmar_share") : t("nota_manual");
+  // "Abrir o email" só faz sentido depois de ter descarregado ficheiros
+  // (modo manual) -- em modo partilha nada foi descarregado.
+  blocoAbrirEmail.classList.toggle("oculto", ehShare);
+}
+
+function mostrarConfirmar(modo) {
+  modoConfirmarAtual = modo;
+  aplicarTextoConfirmar();
+  mostrarTela("confirmar");
+}
+
+document.getElementById("btn-confirmar-enviei").addEventListener("click", () => {
+  documentos = [];
+  mostrarTela("concluido");
+});
+document.getElementById("btn-confirmar-nao").addEventListener("click", () => {
+  mostrarTela("lote"); // documentos continua intacto -- nada foi limpo
+});
+document.getElementById("btn-abrir-email").addEventListener("click", () => {
+  const assunto = encodeURIComponent(t("email_assunto"));
+  const corpo = encodeURIComponent(t("email_corpo"));
+  window.location.href = `mailto:${EMAIL_DESTINO}?subject=${assunto}&body=${corpo}`;
+});
+
 const btnPartilhar = document.getElementById("btn-partilhar");
 
 async function enviarLote() {
@@ -561,21 +615,19 @@ async function enviarLote() {
     return;
   }
 
+  btnPartilhar.textContent = textoOriginal;
+  btnPartilhar.disabled = false;
+
   // "mailto: + descarregar" (tentado antes, 2026-09-09) foi abandonado --
   // confirmado em teste real que os emails chegavam SEM anexo nenhum.
   // "mailto:" nunca anexa ficheiros, é uma limitação de segurança dos
   // browsers, não há como contornar. O Web Share API (navigator.share)
   // suporta vários ficheiros na mesma partilha -- todo o lote sai junto
   // numa única escolha de app, sem repetir o processo por documento.
-  //
-  // Se o cliente CANCELAR o menu de partilha (não escolher nenhuma app),
-  // navigator.share() rejeita com AbortError -- antes disto, o código
-  // seguinte em frente na mesma (limpar o lote, ir para "concluído") corria
-  // à mesma, como se tivesse enviado, obrigando a fotografar tudo de novo
-  // mesmo sem ter enviado nada. Reportado pelo utilizador em teste real,
-  // 2026-09-09. Agora só se considera "enviado" se a partilha não tiver
-  // sido cancelada -- o lote fica intacto e volta-se ao ecrã de lote.
-  let cancelado = false;
+  // IMPORTANTE: share() resolver só quer dizer que a app de email abriu
+  // com os ficheiros anexados -- não que o cliente enviou mesmo a
+  // mensagem lá dentro. Por isso não se assume "enviado" aqui, ver
+  // mostrarConfirmar().
   if (navigator.canShare && navigator.canShare({ files: ficheiros })) {
     try {
       await navigator.share({
@@ -583,41 +635,28 @@ async function enviarLote() {
         title: t("share_title"),
         text: t("share_text", { email: EMAIL_DESTINO }),
       });
+      mostrarConfirmar("share");
+      return;
     } catch (e) {
       if (e && e.name === "AbortError") {
-        cancelado = true;
-      } else {
-        console.error("Erro a partilhar:", e);
+        return; // cancelou -- fica no ecrã de lote, com os documentos intactos.
       }
-    }
-  } else {
-    // Sem suporte a partilha de ficheiros (raro em telemóvel, comum em
-    // browser de computador) -- oferece os PDFs como download. Não há aqui
-    // conceito de "cancelar" -- a transferência corre sempre.
-    for (const ficheiro of ficheiros) {
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(ficheiro);
-      a.download = ficheiro.name;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
+      console.error("Erro a partilhar:", e);
+      // cai para o modo manual abaixo
     }
   }
 
-  btnPartilhar.textContent = textoOriginal;
-  btnPartilhar.disabled = false;
-
-  if (cancelado) {
-    return; // fica no ecrã de lote, com os documentos todos intactos.
+  // Sem suporte a partilha de ficheiros (raro em telemóvel, comum em
+  // browser de computador) -- descarrega os PDFs e mostra os passos.
+  for (const ficheiro of ficheiros) {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(ficheiro);
+    a.download = ficheiro.name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   }
-
-  documentos = [];
-
-  // Depois de enviado, o ecrã de lote não faz sentido continuar visível
-  // -- passa para um ecrã de conclusão com as opções que fazem sentido a
-  // seguir (novo documento, ou terminar). Pedido explícito do
-  // utilizador, 2026-09-09.
-  mostrarTela("concluido");
+  mostrarConfirmar("manual");
 }
 
 btnPartilhar.addEventListener("click", enviarLote);

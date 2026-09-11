@@ -227,6 +227,15 @@
     font-size:18px; padding:4px 8px; flex-shrink:0;
   }
   .btn-remover-lote:active{color:var(--warn);}
+
+  /* --- Confirmar envio --- */
+  #tela-confirmar{gap:14px; padding-top:16px; overflow-y:auto;}
+  #tela-confirmar h1{font-size:18px; margin:0; font-weight:700; text-align:center;}
+  .passos{margin:0; padding-left:20px; font-size:13.5px; line-height:1.6; color:var(--white);}
+  .passos strong{color:var(--gold-light);}
+  .texto-confirmar{color:var(--muted); font-size:14px; line-height:1.5; text-align:center; margin:0; padding:0 4px;}
+  .linha-confirmar{margin-top:4px; padding-top:14px; border-top:1px solid var(--navy-700);}
+
   .cartoes-fotos{display:flex; flex-direction:column; gap:14px;}
   .cartao-foto{
     background:var(--navy-800);
@@ -413,6 +422,32 @@
     <p class="nota-envio" data-i18n-html="nota_envio_html">Toca em "Enviar tudo" e escolhe o <strong>Gmail</strong> (ou Mail) na lista que aparece — não o WhatsApp, para o(s) documento(s) chegar(em) ao escritório. Confirma o destinatário acima antes de enviares (o telemóvel não o preenche sozinho).</p>
   </section>
 
+  <!-- TELA: Confirmar envio -- nunca se assume "enviado" só por a app de
+       email ter aberto com o(s) ficheiro(s) anexados; só fica concluído
+       se o cliente confirmar aqui (ver mostrarConfirmar() no app.js). -->
+  <section id="tela-confirmar" class="tela">
+    <h1 id="confirmar-titulo">Confirma o envio</h1>
+    <ol class="passos oculto" id="confirmar-passos">
+      <li data-i18n-html="manual_p1_html">Os <strong>ficheiros</strong> foram descarregados para o telemóvel.</li>
+      <li data-i18n-html="manual_p2_html">Abre o teu email e cria uma <strong>mensagem nova</strong> para o endereço abaixo.</li>
+      <li data-i18n-html="manual_p3_html">Anexa os ficheiros e <strong>envia</strong>.</li>
+    </ol>
+    <p class="texto-confirmar oculto" id="confirmar-texto-share" data-i18n="confirmar_texto_share">Escolheste o Gmail/Mail com os documentos já anexados. Só fica enviado depois de confirmares/enviares essa mensagem lá.</p>
+    <div class="caixa-endereco">
+      <span data-i18n="enviar_para">Enviar para:</span>
+      <strong id="endereco-envio-confirmar"></strong>
+      <button class="btn-copiar" id="btn-copiar-endereco-confirmar" data-i18n="btn_copiar" data-i18n-aria="copiar_aria" aria-label="Copiar endereço">Copiar</button>
+    </div>
+    <div class="botoes botoes-concluido oculto" id="bloco-abrir-email">
+      <button class="btn-secundario btn-full" id="btn-abrir-email" data-i18n="btn_abrir_email">Abrir o email</button>
+    </div>
+    <p class="nota-envio" id="confirmar-nota">...</p>
+    <div class="botoes botoes-concluido linha-confirmar">
+      <button class="btn-principal btn-full" id="btn-confirmar-enviei" data-i18n="btn_sim_enviei">Sim, enviei — terminar</button>
+      <button class="btn-secundario btn-full" id="btn-confirmar-nao" data-i18n="btn_nao_enviei">Ainda não — voltar ao lote</button>
+    </div>
+  </section>
+
   <!-- TELA: Concluído -->
   <section id="tela-concluido" class="tela">
     <div class="icone-camara-grande">
@@ -420,8 +455,8 @@
         <path d="M4.5 12.5l5 5 10-11" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </div>
-    <h1 data-i18n="concluido_titulo">Documentos preparados</h1>
-    <p data-i18n="concluido_texto">Se já escolheste o Gmail/Mail e confirmaste o destinatário, está enviado. Se ainda não enviaste, os PDFs continuam prontos para partilhar.</p>
+    <h1 data-i18n="concluido_titulo">Documentos enviados</h1>
+    <p data-i18n="concluido_texto">Obrigado! Os documentos foram enviados para a contabilidade.</p>
     <div class="botoes botoes-concluido">
       <button class="btn-principal btn-full" id="btn-novo-documento" data-i18n="btn_novo_documento">Fotografar outro documento</button>
       <button class="btn-secundario btn-full" id="btn-terminar" data-i18n="btn_terminar">Terminar</button>

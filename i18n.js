@@ -77,10 +77,28 @@ const TRADUCOES = {
     share_text: "Documentos para a contabilidade (enviar para {email}).",
     nome_ficheiro: "documento",
 
+    // --- Confirmar envio (depois de partilhar OU de descarregar -- nunca
+    // se assume "enviado" sem o cliente confirmar, ver mostrarConfirmar()) ---
+    manual_titulo: "Ficheiros descarregados",
+    manual_p1_html: "Os <strong>ficheiros</strong> foram descarregados para o telemóvel.",
+    manual_p2_html: "Abre o teu email e cria uma <strong>mensagem nova</strong> para o endereço abaixo.",
+    manual_p3_html: "Anexa os ficheiros e <strong>envia</strong>.",
+    btn_abrir_email: "Abrir o email",
+    nota_manual:
+      "O botão \"Abrir o email\" só preenche o destinatário e o assunto — os anexos tens de os escolher tu (o telemóvel não deixa anexar sozinho).",
+    confirmar_titulo_share: "Confirma o envio",
+    confirmar_texto_share:
+      "Escolheste o Gmail/Mail com os documentos já anexados. Só fica enviado depois de confirmares/enviares essa mensagem lá.",
+    nota_confirmar_share: "Se ainda não enviaste a mensagem, volta atrás — o lote continua intacto.",
+    btn_sim_enviei: "Sim, enviei — terminar",
+    btn_nao_enviei: "Ainda não — voltar ao lote",
+    email_assunto: "Documentos para a contabilidade",
+    email_corpo:
+      "Boa tarde,\n\nSeguem em anexo os documentos para a contabilidade.\n(Anexa aqui os ficheiros que a ContaClick acabou de descarregar.)\n\nObrigado.",
+
     // --- Concluído ---
-    concluido_titulo: "Documentos preparados",
-    concluido_texto:
-      "Se já escolheste o Gmail/Mail e confirmaste o destinatário, está enviado. Se ainda não enviaste, os PDFs continuam prontos para partilhar.",
+    concluido_titulo: "Documentos enviados",
+    concluido_texto: "Obrigado! Os documentos foram enviados para a contabilidade.",
     btn_novo_documento: "Fotografar outro documento",
     btn_terminar: "Terminar",
 
@@ -156,10 +174,28 @@ const TRADUCOES = {
     share_text: "Documents for the accountant (send to {email}).",
     nome_ficheiro: "document",
 
+    // --- Confirm sending (after sharing OR downloading -- never assumed
+    // "sent" without the client confirming, see mostrarConfirmar()) ---
+    manual_titulo: "Files downloaded",
+    manual_p1_html: "The <strong>files</strong> were downloaded to your phone.",
+    manual_p2_html: "Open your email and start a <strong>new message</strong> to the address below.",
+    manual_p3_html: "Attach the files and <strong>send</strong>.",
+    btn_abrir_email: "Open email",
+    nota_manual:
+      "The \"Open email\" button only fills in the recipient and subject — you have to pick the attachments yourself (your phone won't attach them automatically).",
+    confirmar_titulo_share: "Confirm sending",
+    confirmar_texto_share:
+      "You picked Gmail/Mail with the documents already attached. It's only sent once you confirm/send that message there.",
+    nota_confirmar_share: "If you haven't sent the message yet, go back — the batch is still there.",
+    btn_sim_enviei: "Yes, I've sent it — finish",
+    btn_nao_enviei: "Not yet — back to the batch",
+    email_assunto: "Documents for the accountant",
+    email_corpo:
+      "Hello,\n\nPlease find attached the documents for the accountant.\n(Attach here the files ContaClick just downloaded.)\n\nThank you.",
+
     // --- Done ---
-    concluido_titulo: "Documents ready",
-    concluido_texto:
-      "If you've already picked Gmail/Mail and confirmed the recipient, it's sent. If not, the PDFs are still ready to share.",
+    concluido_titulo: "Documents sent",
+    concluido_texto: "Thank you! The documents have been sent to the accountant.",
     btn_novo_documento: "Photograph another document",
     btn_terminar: "Finish",
 
