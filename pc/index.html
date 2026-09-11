@@ -144,7 +144,18 @@
     font-size:12px; font-weight:700; flex-shrink:0; cursor:pointer;
   }
 
+  .chk-zip-label{
+    display:flex; align-items:center; gap:9px;
+    font-size:13px; color:var(--muted);
+    cursor:pointer; padding:2px 2px 4px;
+  }
+  .chk-zip-label input{width:16px; height:16px; accent-color:var(--gold); cursor:pointer; flex-shrink:0;}
+
   .botoes{display:flex; gap:10px; padding:8px 0 6px;}
+  .linha-confirmar{
+    margin-top:10px; padding-top:16px;
+    border-top:1px solid var(--navy-700);
+  }
   .nota{
     text-align:center; font-size:12px; color:var(--muted);
     line-height:1.5; margin:0 0 18px; padding:0 6px;
@@ -172,8 +183,8 @@
   button:disabled{opacity:.6; cursor:default;}
 
   /* --- Enviar manual / Concluído --- */
-  #tela-manual{gap:16px; padding:22px 0 10px;}
-  #tela-manual h1{font-size:20px; margin:0; font-weight:700; text-align:center;}
+  #tela-confirmar{gap:14px; padding:20px 0 10px; overflow-y:auto;}
+  #tela-confirmar h1{font-size:20px; margin:0; font-weight:700; text-align:center;}
   #tela-concluido{justify-content:center; text-align:center; gap:16px;}
   #tela-concluido h1{font-size:22px; margin:0; font-weight:700;}
   #tela-concluido p{color:var(--muted); font-size:14.5px; line-height:1.5; margin:0; max-width:44ch; margin-inline:auto;}
@@ -228,30 +239,41 @@
       <strong id="endereco-envio"></strong>
       <button class="btn-copiar" id="btn-copiar-endereco" data-i18n="btn_copiar" data-i18n-aria="copiar_aria" aria-label="Copiar endereço">Copiar</button>
     </div>
+    <label class="chk-zip-label">
+      <input type="checkbox" id="chk-zip">
+      <span data-i18n="chk_zip">Comprimir tudo num único ficheiro .zip antes de enviar</span>
+    </label>
     <div class="botoes">
       <button class="btn-principal btn-full" id="btn-enviar" data-i18n="btn_enviar">Enviar tudo »</button>
     </div>
     <p class="nota" data-i18n="nota_lote">As imagens são convertidas para PDF; os PDF seguem tal como estão.</p>
   </section>
 
-  <!-- TELA: Envio manual (quando o browser não tem partilha de ficheiros) -->
-  <section id="tela-manual" class="tela">
-    <h1 data-i18n="manual_titulo">Ficheiros descarregados</h1>
-    <ol class="passos">
+  <!-- TELA: Confirmar envio -- depois de partilhar OU de descarregar, só
+       fica "concluído" se o cliente confirmar aqui; nunca se assume que
+       abrir a app de email / descarregar os ficheiros é o mesmo que
+       ter mesmo enviado a mensagem (ver mostrarConfirmar() no app.js). -->
+  <section id="tela-confirmar" class="tela">
+    <h1 id="confirmar-titulo">Confirma o envio</h1>
+    <ol class="passos oculto" id="confirmar-passos">
       <li data-i18n-html="manual_p1_html">Os <strong>ficheiros</strong> foram guardados na pasta <strong>Transferências</strong>.</li>
       <li data-i18n-html="manual_p2_html">Abre o teu email e cria uma <strong>mensagem nova</strong> para o endereço abaixo.</li>
       <li data-i18n-html="manual_p3_html">Anexa os ficheiros descarregados e <strong>envia</strong>.</li>
     </ol>
+    <p class="sub oculto" id="confirmar-texto-share" data-i18n="confirmar_texto_share">Abriste a app de email com os documentos já prontos. Só fica enviado depois de confirmares/enviares essa mensagem lá.</p>
     <div class="caixa-endereco">
       <span data-i18n="enviar_para">Enviar para:</span>
       <strong id="endereco-envio-2"></strong>
       <button class="btn-copiar" id="btn-copiar-endereco-2" data-i18n="btn_copiar" aria-label="Copiar endereço">Copiar</button>
     </div>
     <div class="botoes botoes-col">
-      <button class="btn-principal btn-full" id="btn-abrir-email" data-i18n="btn_abrir_email">Abrir o email</button>
-      <button class="btn-secundario btn-full" id="btn-manual-terminei" data-i18n="btn_ja_enviei">Já enviei — terminar</button>
+      <button class="btn-secundario btn-full" id="btn-abrir-email" data-i18n="btn_abrir_email">Abrir o email</button>
     </div>
-    <p class="nota" data-i18n="nota_manual">O botão "Abrir o email" só preenche o destinatário e o assunto — os anexos tens de os arrastar tu (o browser não deixa anexar sozinho).</p>
+    <p class="nota" id="confirmar-nota" data-i18n="nota_manual">O botão "Abrir o email" só preenche o destinatário e o assunto — os anexos tens de os arrastar tu (o browser não deixa anexar sozinho).</p>
+    <div class="botoes botoes-col linha-confirmar">
+      <button class="btn-principal btn-full" id="btn-confirmar-enviei" data-i18n="btn_sim_enviei">Sim, enviei — terminar</button>
+      <button class="btn-secundario btn-full" id="btn-confirmar-nao" data-i18n="btn_nao_enviei">Ainda não — voltar ao lote</button>
+    </div>
   </section>
 
   <!-- TELA: Concluído -->
@@ -273,6 +295,7 @@
 </div>
 
 <script src="jspdf.umd.min.js"></script>
+<script src="minizip.js"></script>
 <script src="i18n.js"></script>
 <script src="app.js"></script>
 </body>

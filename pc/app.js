@@ -60,7 +60,7 @@ function t(chave, params) {
 const telas = {
   inicio: document.getElementById("tela-inicio"),
   lote: document.getElementById("tela-lote"),
-  manual: document.getElementById("tela-manual"),
+  confirmar: document.getElementById("tela-confirmar"),
   concluido: document.getElementById("tela-concluido"),
 };
 
@@ -69,6 +69,11 @@ const inputFicheiros = document.getElementById("input-ficheiros");
 const listaLote = document.getElementById("lista-lote");
 const tituloLote = document.getElementById("titulo-lote");
 const btnEnviar = document.getElementById("btn-enviar");
+const chkZip = document.getElementById("chk-zip");
+const confirmarPassos = document.getElementById("confirmar-passos");
+const confirmarTextoShare = document.getElementById("confirmar-texto-share");
+const confirmarTitulo = document.getElementById("confirmar-titulo");
+const confirmarNota = document.getElementById("confirmar-nota");
 
 document.getElementById("endereco-envio").textContent = EMAIL_DESTINO;
 document.getElementById("endereco-envio-2").textContent = EMAIL_DESTINO;
@@ -96,8 +101,11 @@ function aplicarTraducoesEstaticas() {
   });
 }
 
+let modoConfirmarAtual = "manual"; // "manual" | "share" -- ver mostrarConfirmar()
+
 function refrescarEcraDinamico() {
   if (telas.lote.classList.contains("ativa")) renderizarLote();
+  if (telas.confirmar.classList.contains("ativa")) aplicarTextoConfirmar();
 }
 
 function definirIdioma(novo) {
@@ -231,6 +239,39 @@ function renderizarLote() {
 document.getElementById("btn-adicionar-outro").addEventListener("click", () => inputFicheiros.click());
 
 // ---------------------------------------------------------------------
+// Confirmar envio -- nem a partilha nativa (navigator.share) nem o
+// download resolvem sozinhos "foi mesmo enviado": o share() resolve só
+// porque a app de email abriu com os ficheiros já anexados, não porque o
+// cliente clicou em enviar lá dentro -- se ele fechar a mensagem sem
+// enviar, esta app não tem forma de saber. Por isso nunca se assume
+// sucesso: este ecrã pergunta sempre, e só limpa o lote se o cliente
+// confirmar. "Ainda não" volta ao lote com os documentos intactos, para
+// tentar outra vez. Pedido explícito do utilizador, 2026-09-11 (reportou
+// o mesmo problema que já tinha acontecido na app do telemóvel).
+// ---------------------------------------------------------------------
+function aplicarTextoConfirmar() {
+  const ehShare = modoConfirmarAtual === "share";
+  confirmarPassos.classList.toggle("oculto", ehShare);
+  confirmarTextoShare.classList.toggle("oculto", !ehShare);
+  confirmarTitulo.textContent = ehShare ? t("confirmar_titulo_share") : t("manual_titulo");
+  confirmarNota.textContent = ehShare ? t("nota_confirmar_share") : t("nota_manual");
+}
+
+function mostrarConfirmar(modo) {
+  modoConfirmarAtual = modo;
+  aplicarTextoConfirmar();
+  mostrarTela("confirmar");
+}
+
+document.getElementById("btn-confirmar-enviei").addEventListener("click", () => {
+  documentos = [];
+  mostrarTela("concluido");
+});
+document.getElementById("btn-confirmar-nao").addEventListener("click", () => {
+  mostrarTela("lote"); // documentos continua intacto -- nada foi limpo
+});
+
+// ---------------------------------------------------------------------
 // Imagem -> PDF de 1 página (mesma abordagem da app do telemóvel:
 // tamanho de página a partir dos pixels da imagem, a ~150dpi)
 // ---------------------------------------------------------------------
@@ -293,6 +334,10 @@ async function prepararFicheiros() {
 // ---------------------------------------------------------------------
 let ficheirosPreparados = []; // guardado para o ecrã de envio manual
 
+function nomeZipComData() {
+  return `${t("nome_zip")}_${new Date().toISOString().slice(0, 10)}.zip`;
+}
+
 async function enviar() {
   if (documentos.length === 0) return;
   const textoOriginal = btnEnviar.textContent;
@@ -301,6 +346,9 @@ async function enviar() {
 
   try {
     ficheirosPreparados = await prepararFicheiros();
+    if (chkZip.checked) {
+      ficheirosPreparados = [await ficheirosParaZip(ficheirosPreparados, nomeZipComData())];
+    }
   } catch (e) {
     console.error("Erro a preparar os ficheiros:", e);
     btnEnviar.textContent = textoOriginal;
@@ -313,7 +361,11 @@ async function enviar() {
   btnEnviar.disabled = false;
 
   // 1) Partilha nativa de ficheiros, se o browser a suportar (Edge/Chrome
-  //    no Windows suportam navigator.share com ficheiros).
+  //    no Windows suportam navigator.share com ficheiros). IMPORTANTE:
+  //    share() resolver só quer dizer que a app de email abriu com os
+  //    ficheiros anexados -- não que o cliente clicou mesmo em "Enviar"
+  //    lá dentro. Por isso não se assume "enviado" aqui -- ver
+  //    mostrarConfirmar().
   if (navigator.canShare && navigator.canShare({ files: ficheirosPreparados })) {
     try {
       await navigator.share({
@@ -321,8 +373,7 @@ async function enviar() {
         title: t("share_title"),
         text: t("share_text", { email: EMAIL_DESTINO }),
       });
-      documentos = [];
-      mostrarTela("concluido");
+      mostrarConfirmar("share");
       return;
     } catch (e) {
       if (e && e.name === "AbortError") return; // cancelou -- fica no lote, intacto
@@ -340,7 +391,7 @@ async function enviar() {
     a.click();
     a.remove();
   }
-  mostrarTela("manual");
+  mostrarConfirmar("manual");
 }
 
 btnEnviar.addEventListener("click", enviar);
@@ -349,11 +400,6 @@ document.getElementById("btn-abrir-email").addEventListener("click", () => {
   const assunto = encodeURIComponent(t("email_assunto"));
   const corpo = encodeURIComponent(t("email_corpo"));
   window.location.href = `mailto:${EMAIL_DESTINO}?subject=${assunto}&body=${corpo}`;
-});
-
-document.getElementById("btn-manual-terminei").addEventListener("click", () => {
-  documentos = [];
-  mostrarTela("concluido");
 });
 
 // ---------------------------------------------------------------------

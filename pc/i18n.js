@@ -35,6 +35,8 @@ const TRADUCOES = {
     item_pdf: "PDF",
     item_outro: "enviado tal como está",
     remover_aria: "Remover {nome}",
+    chk_zip: "Comprimir tudo num único ficheiro .zip antes de enviar",
+    nome_zip: "documentos",
 
     // --- Envio ---
     a_preparar: "A preparar...",
@@ -42,15 +44,21 @@ const TRADUCOES = {
     share_title: "Documentos para a contabilidade",
     share_text: "Documentos para a contabilidade (enviar para {email}).",
 
-    // --- Envio manual (browser sem partilha de ficheiros) ---
+    // --- Confirmar envio (depois de partilhar OU de descarregar -- nunca
+    // se assume "enviado" sem o cliente confirmar, ver mostrarConfirmar()) ---
     manual_titulo: "Ficheiros descarregados",
     manual_p1_html: "Os <strong>ficheiros</strong> foram guardados na pasta <strong>Transferências</strong>.",
     manual_p2_html: "Abre o teu email e cria uma <strong>mensagem nova</strong> para o endereço abaixo.",
     manual_p3_html: "Anexa os ficheiros descarregados e <strong>envia</strong>.",
     btn_abrir_email: "Abrir o email",
-    btn_ja_enviei: "Já enviei — terminar",
     nota_manual:
       "O botão \"Abrir o email\" só preenche o destinatário e o assunto — os anexos tens de os arrastar tu (o browser não deixa anexar sozinho).",
+    confirmar_titulo_share: "Confirma o envio",
+    confirmar_texto_share:
+      "Abriste a app de email com os documentos já prontos. Só fica enviado depois de confirmares/enviares essa mensagem lá.",
+    nota_confirmar_share: "Se ainda não enviaste a mensagem, volta atrás — o lote continua intacto.",
+    btn_sim_enviei: "Sim, enviei — terminar",
+    btn_nao_enviei: "Ainda não — voltar ao lote",
     email_assunto: "Documentos para a contabilidade",
     email_corpo:
       "Boa tarde,\n\nSeguem em anexo os documentos para a contabilidade.\n(Anexa aqui os ficheiros que a ContaClick acabou de descarregar.)\n\nObrigado.",
@@ -88,6 +96,8 @@ const TRADUCOES = {
     item_pdf: "PDF",
     item_outro: "sent as it is",
     remover_aria: "Remove {nome}",
+    chk_zip: "Compress everything into one .zip file before sending",
+    nome_zip: "documents",
 
     // --- Sending ---
     a_preparar: "Preparing...",
@@ -95,15 +105,21 @@ const TRADUCOES = {
     share_title: "Documents for the accountant",
     share_text: "Documents for the accountant (send to {email}).",
 
-    // --- Manual sending (browser without file sharing) ---
+    // --- Confirm sending (after sharing OR downloading -- never assumed
+    // "sent" without the client confirming, see mostrarConfirmar()) ---
     manual_titulo: "Files downloaded",
     manual_p1_html: "The <strong>files</strong> were saved to your <strong>Downloads</strong> folder.",
     manual_p2_html: "Open your email and start a <strong>new message</strong> to the address below.",
     manual_p3_html: "Attach the downloaded files and <strong>send</strong>.",
     btn_abrir_email: "Open email",
-    btn_ja_enviei: "I've sent it — finish",
     nota_manual:
       "The \"Open email\" button only fills in the recipient and subject — you have to drag the attachments in yourself (the browser won't attach them automatically).",
+    confirmar_titulo_share: "Confirm sending",
+    confirmar_texto_share:
+      "You opened your email app with the documents ready to go. It's only sent once you confirm/send that message there.",
+    nota_confirmar_share: "If you haven't sent the message yet, go back — the batch is still there.",
+    btn_sim_enviei: "Yes, I've sent it — finish",
+    btn_nao_enviei: "Not yet — back to the batch",
     email_assunto: "Documents for the accountant",
     email_corpo:
       "Hello,\n\nPlease find attached the documents for the accountant.\n(Attach here the files ContaClick just downloaded.)\n\nThank you.",
