@@ -106,6 +106,19 @@ async function carregarHistoricoConhecido() {
       }
     }
     historicoConhecido = mapa;
+    // Repescagem: se o cliente já tiver adicionado ficheiros ao lote
+    // ANTES desta resposta chegar (condição de corrida real, reportada
+    // 2026-09-14 -- arrastar um ficheiro logo ao abrir a app, antes do
+    // pedido ao servidor terminar), volta a verificar agora contra o
+    // histórico que acabou de chegar, e atualiza o ecrã se necessário.
+    let mudou = false;
+    for (const doc of documentos) {
+      if (!doc.dataEnvioAnterior && historicoConhecido.has(doc.nome)) {
+        doc.dataEnvioAnterior = historicoConhecido.get(doc.nome);
+        mudou = true;
+      }
+    }
+    if (mudou && telas.lote.classList.contains("ativa")) renderizarLote();
   } catch (e) {
     console.error("Falha a carregar histórico conhecido (aviso de duplicado fica desativado):", e);
   }
@@ -531,6 +544,11 @@ async function enviar() {
   if (enviouAutomaticamente) {
     documentos = [];
     mostrarTela("concluido");
+    // Atualiza o histórico conhecido em fundo -- sem isto, reenviar o
+    // mesmo ficheiro ainda na mesma sessão (sem recarregar a página)
+    // nunca acionava o aviso, porque a lista só era lida uma vez ao
+    // abrir a app (2026-09-14, reportado em teste real).
+    carregarHistoricoConhecido();
     return;
   }
 
