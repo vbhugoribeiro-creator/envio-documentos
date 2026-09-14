@@ -28,7 +28,8 @@ const EMAIL_DESTINO = "vb.hugo.ribeiro@gmail.com";
 // Desktop\contaclick-worker. Tentado primeiro em enviarLote(); se falhar
 // (rede em baixo, lote grande demais, etc.) cai sempre para o fluxo antigo
 // (Web Share / descarregar + mailto:), nunca perde a capacidade de enviar.
-const WORKER_URL = "https://api.vanessabranco.pt/enviar";
+const WORKER_BASE_URL = "https://api.vanessabranco.pt";
+const WORKER_URL = `${WORKER_BASE_URL}/enviar`;
 
 // Medidor de tamanho do lote (2026-09-14, pedido explícito do utilizador)
 // -- o Worker só envia automaticamente até este limite (ver
@@ -64,6 +65,32 @@ let idioma = "pt";
   idioma = nav.startsWith("en") ? "en" : "pt";
 })();
 
+// ---------------------------------------------------------------------
+// Token pessoal do cliente (2026-09-14) -- vem de um link único
+// (?c=TOKEN) que o escritório dá a cada cliente. Guardado uma vez no
+// telemóvel, para todos os envios seguintes já virem identificados, sem
+// o cliente ter de fazer nada. Sem token (link normal, sem "?c="), a app
+// funciona exatamente como sempre funcionou.
+// ---------------------------------------------------------------------
+let tokenCliente = null;
+(function lerTokenCliente() {
+  try {
+    const parametros = new URLSearchParams(window.location.search);
+    const tokenDoLink = parametros.get("c");
+    if (tokenDoLink) {
+      localStorage.setItem("contaclick_token", tokenDoLink);
+      // Tira o token da barra de endereço -- não faz sentido continuar
+      // visível ali depois de já ter ficado guardado.
+      const urlLimpo = window.location.pathname + window.location.hash;
+      window.history.replaceState(null, "", urlLimpo);
+    }
+    tokenCliente = localStorage.getItem("contaclick_token");
+  } catch (e) {
+    /* localStorage pode estar bloqueado -- sem problema, fica sem token
+       nesta sessão, a app continua a funcionar na mesma. */
+  }
+})();
+
 // t("chave") ou t("chave", { n: 3 }) para os {marcadores} do texto.
 function t(chave, params) {
   const tabela = TRADUCOES[idioma] || TRADUCOES.pt;
@@ -90,6 +117,7 @@ const telas = {
   confirmar: document.getElementById("tela-confirmar"),
   concluido: document.getElementById("tela-concluido"),
   erro: document.getElementById("tela-erro"),
+  historico: document.getElementById("tela-historico"),
 };
 
 const video = document.getElementById("video");
@@ -634,6 +662,7 @@ async function tentarEnvioAutomatico(ficheiros) {
     for (const ficheiro of ficheiros) {
       formData.append("files", ficheiro, ficheiro.name);
     }
+    if (tokenCliente) formData.append("token", tokenCliente);
     const resposta = await fetch(WORKER_URL, { method: "POST", body: formData });
     return resposta.ok;
   } catch (e) {
@@ -846,3 +875,58 @@ btnInstalar.addEventListener("click", async () => {
 window.addEventListener("appinstalled", () => {
   btnInstalar.classList.add("oculto");
 });
+
+// ---------------------------------------------------------------------
+// Histórico de envios (2026-09-14) -- só visível com um link pessoal (ver
+// lerTokenCliente() acima). Mostra o que já saiu por este link, lido
+// diretamente do Worker (ver contaclick-worker/src/index.js, /historico).
+// ---------------------------------------------------------------------
+const btnVerHistorico = document.getElementById("btn-ver-historico");
+const listaHistorico = document.getElementById("lista-historico");
+const historicoVazio = document.getElementById("historico-vazio");
+const btnHistoricoVoltar = document.getElementById("btn-historico-voltar");
+
+if (tokenCliente) {
+  btnVerHistorico.classList.remove("oculto");
+}
+
+function formatarTamanhoHistorico(bytes) {
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+btnVerHistorico.addEventListener("click", async () => {
+  mostrarTela("historico");
+  listaHistorico.innerHTML = "";
+  historicoVazio.classList.add("oculto");
+  try {
+    const resposta = await fetch(`${WORKER_BASE_URL}/historico?token=${encodeURIComponent(tokenCliente)}`);
+    const dados = await resposta.json();
+    const envios = dados.envios || [];
+    if (envios.length === 0) {
+      historicoVazio.classList.remove("oculto");
+      return;
+    }
+    envios.forEach((envio) => {
+      const item = document.createElement("div");
+      item.className = "item-historico";
+      const nomes = document.createElement("div");
+      nomes.className = "nomes";
+      nomes.textContent = envio.ficheiros.join(", ");
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      const data = new Date(envio.enviado_em).toLocaleString(idioma === "en" ? "en-GB" : "pt-PT");
+      meta.textContent = t("historico_item_meta", {
+        tamanho: formatarTamanhoHistorico(envio.tamanho_bytes),
+        data,
+      });
+      item.append(nomes, meta);
+      listaHistorico.appendChild(item);
+    });
+  } catch (e) {
+    console.error("Falha a carregar o histórico:", e);
+    historicoVazio.classList.remove("oculto");
+  }
+});
+
+btnHistoricoVoltar.addEventListener("click", () => mostrarTela("inicio"));

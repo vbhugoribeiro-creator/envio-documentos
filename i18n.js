@@ -30,6 +30,11 @@ const TRADUCOES = {
     btn_com_qr_html: "Com código QR<small>2 fotos: QR + documento</small>",
     btn_sem_qr_html: "Sem código QR<small>1 foto só do documento</small>",
     btn_instalar: "📌 Fixar app no ecrã principal",
+    btn_ver_historico: "📋 Ver os meus envios",
+    historico_titulo: "Os teus envios",
+    historico_vazio: "Ainda não enviaste nenhum documento por este link.",
+    historico_item_meta: "{tamanho} · {data}",
+    btn_voltar: "« Voltar",
     nota_instalar_ios_html:
       "Para fixares no ecrã principal: toca em <strong>Partilhar</strong> (⬆) e depois em <strong>\"Adicionar ao Ecrã Principal\"</strong>.",
 
@@ -132,6 +137,11 @@ const TRADUCOES = {
     btn_com_qr_html: "With QR code<small>2 photos: QR + document</small>",
     btn_sem_qr_html: "Without QR code<small>1 photo of the document only</small>",
     btn_instalar: "📌 Add app to home screen",
+    btn_ver_historico: "📋 See my submissions",
+    historico_titulo: "Your submissions",
+    historico_vazio: "You haven't sent any documents through this link yet.",
+    historico_item_meta: "{tamanho} · {data}",
+    btn_voltar: "« Back",
     nota_instalar_ios_html:
       "To add it to your home screen: tap <strong>Share</strong> (⬆) then <strong>\"Add to Home Screen\"</strong>.",
 

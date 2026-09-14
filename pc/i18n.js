@@ -23,6 +23,11 @@ const TRADUCOES = {
     btn_instalar: "📌 Instalar no ambiente de trabalho",
     nota_instalar_manual:
       "Para instalar no ambiente de trabalho: no Chrome/Edge, clica no ícone de instalar (⊕ ou uma seta) do lado direito da barra de endereço.",
+    btn_ver_historico: "📋 Ver os meus envios",
+    historico_titulo: "Os teus envios",
+    historico_vazio: "Ainda não enviaste nenhum ficheiro por este link.",
+    historico_item_meta: "{tamanho} · {data}",
+    btn_voltar: "« Voltar",
 
     // --- Lote ---
     lote_titulo_1: "1 documento pronto",
@@ -94,6 +99,11 @@ const TRADUCOES = {
     btn_instalar: "📌 Install to desktop",
     nota_instalar_manual:
       "To install to your desktop: in Chrome/Edge, click the install icon (⊕ or an arrow) on the right side of the address bar.",
+    btn_ver_historico: "📋 See my submissions",
+    historico_titulo: "Your submissions",
+    historico_vazio: "You haven't sent any files through this link yet.",
+    historico_item_meta: "{tamanho} · {data}",
+    btn_voltar: "« Back",
 
     // --- Batch ---
     lote_titulo_1: "1 document ready",

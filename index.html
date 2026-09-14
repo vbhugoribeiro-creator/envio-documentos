@@ -206,6 +206,17 @@
   #tela-lote{gap:12px; padding-top:16px; overflow-y:auto;}
   #tela-lote h1{font-size:18px; margin:0; font-weight:700; text-align:center;}
   .lista-lote{display:flex; flex-direction:column; gap:10px;}
+
+  /* --- Histórico --- */
+  #tela-historico{gap:12px; padding-top:16px; overflow-y:auto;}
+  #tela-historico h1{font-size:18px; margin:0 0 4px; font-weight:700; text-align:center;}
+  .item-historico{
+    background:var(--navy-800); border-radius:13px; padding:12px 14px;
+    display:flex; flex-direction:column; gap:2px;
+  }
+  .item-historico .nomes{font-size:13.5px; font-weight:700;}
+  .item-historico .meta{font-size:11.5px; color:var(--muted);}
+
   .medidor-tamanho{display:flex; flex-direction:column; gap:5px; padding:2px 2px 0;}
   .medidor-barra{
     height:8px; border-radius:999px; background:var(--navy-700);
@@ -383,6 +394,15 @@
     </div>
     <button class="btn-instalar oculto" id="btn-instalar" data-i18n="btn_instalar">📌 Fixar app no ecrã principal</button>
     <p class="nota-instalar-ios oculto" id="nota-instalar-ios" data-i18n-html="nota_instalar_ios_html">Para fixares no ecrã principal: toca em <strong>Partilhar</strong> (⬆) e depois em <strong>"Adicionar ao Ecrã Principal"</strong>.</p>
+    <button class="btn-instalar oculto" id="btn-ver-historico" data-i18n="btn_ver_historico">📋 Ver os meus envios</button>
+  </section>
+
+  <!-- TELA: Histórico (só aparece com um link pessoal -- ver app.js) -->
+  <section id="tela-historico" class="tela">
+    <h1 data-i18n="historico_titulo">Os teus envios</h1>
+    <div class="lista-lote" id="lista-historico"></div>
+    <p class="texto-confirmar oculto" id="historico-vazio" data-i18n="historico_vazio">Ainda não enviaste nenhum documento por este link.</p>
+    <button class="btn-secundario btn-full" id="btn-historico-voltar" data-i18n="btn_voltar">« Voltar</button>
   </section>
 
   <!-- TELA: Câmara (reaproveitada para os 2 passos -- ver app.js, etapaAtual) -->

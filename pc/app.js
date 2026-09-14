@@ -27,7 +27,8 @@ const EMAIL_DESTINO = "vb.hugo.ribeiro@gmail.com";
 // Desktop\contaclick-worker. Tentado primeiro em enviar(); se falhar cai
 // sempre para o fluxo antigo (Web Share / descarregar + mailto:), mesma
 // lógica da app do telemóvel.
-const WORKER_URL = "https://api.vanessabranco.pt/enviar";
+const WORKER_BASE_URL = "https://api.vanessabranco.pt";
+const WORKER_URL = `${WORKER_BASE_URL}/enviar`;
 
 // Medidor de tamanho do lote (2026-09-14, pedido explícito do utilizador)
 // -- mesma lógica e mesmo limite da app do telemóvel (ver app.js). Aplica-
@@ -59,6 +60,27 @@ let idioma = "pt";
   idioma = nav.startsWith("en") ? "en" : "pt";
 })();
 
+// ---------------------------------------------------------------------
+// Token pessoal do cliente (2026-09-14) -- mesma chave localStorage da
+// app do telemóvel, mesma lógica (ver app.js: lerTokenCliente).
+// ---------------------------------------------------------------------
+let tokenCliente = null;
+(function lerTokenCliente() {
+  try {
+    const parametros = new URLSearchParams(window.location.search);
+    const tokenDoLink = parametros.get("c");
+    if (tokenDoLink) {
+      localStorage.setItem("contaclick_token", tokenDoLink);
+      const urlLimpo = window.location.pathname + window.location.hash;
+      window.history.replaceState(null, "", urlLimpo);
+    }
+    tokenCliente = localStorage.getItem("contaclick_token");
+  } catch (e) {
+    /* localStorage pode estar bloqueado -- sem problema, fica sem token
+       nesta sessão. */
+  }
+})();
+
 function t(chave, params) {
   const tabela = TRADUCOES[idioma] || TRADUCOES.pt;
   let texto = tabela[chave];
@@ -76,6 +98,7 @@ const telas = {
   lote: document.getElementById("tela-lote"),
   confirmar: document.getElementById("tela-confirmar"),
   concluido: document.getElementById("tela-concluido"),
+  historico: document.getElementById("tela-historico"),
 };
 
 const dropZona = document.getElementById("drop-zona");
@@ -324,6 +347,7 @@ async function tentarEnvioAutomatico(ficheiros) {
     for (const ficheiro of ficheiros) {
       formData.append("files", ficheiro, ficheiro.name);
     }
+    if (tokenCliente) formData.append("token", tokenCliente);
     const resposta = await fetch(WORKER_URL, { method: "POST", body: formData });
     return resposta.ok;
   } catch (e) {
@@ -567,3 +591,52 @@ window.addEventListener("appinstalled", () => {
   btnInstalar.classList.add("oculto");
   notaInstalarManual.classList.add("oculto");
 });
+
+// ---------------------------------------------------------------------
+// Histórico de envios (2026-09-14) -- mesma lógica da app do telemóvel
+// (ver app.js), só visível com um link pessoal.
+// ---------------------------------------------------------------------
+const btnVerHistorico = document.getElementById("btn-ver-historico");
+const listaHistorico = document.getElementById("lista-historico");
+const historicoVazio = document.getElementById("historico-vazio");
+const btnHistoricoVoltar = document.getElementById("btn-historico-voltar");
+
+if (tokenCliente) {
+  btnVerHistorico.classList.remove("oculto");
+}
+
+btnVerHistorico.addEventListener("click", async () => {
+  mostrarTela("historico");
+  listaHistorico.innerHTML = "";
+  historicoVazio.classList.add("oculto");
+  try {
+    const resposta = await fetch(`${WORKER_BASE_URL}/historico?token=${encodeURIComponent(tokenCliente)}`);
+    const dados = await resposta.json();
+    const envios = dados.envios || [];
+    if (envios.length === 0) {
+      historicoVazio.classList.remove("oculto");
+      return;
+    }
+    envios.forEach((envio) => {
+      const item = document.createElement("div");
+      item.className = "item-historico";
+      const nomes = document.createElement("div");
+      nomes.className = "nomes";
+      nomes.textContent = envio.ficheiros.join(", ");
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      const data = new Date(envio.enviado_em).toLocaleString(idioma === "en" ? "en-GB" : "pt-PT");
+      meta.textContent = t("historico_item_meta", {
+        tamanho: formatarTamanho(envio.tamanho_bytes),
+        data,
+      });
+      item.append(nomes, meta);
+      listaHistorico.appendChild(item);
+    });
+  } catch (e) {
+    console.error("Falha a carregar o histórico:", e);
+    historicoVazio.classList.remove("oculto");
+  }
+});
+
+btnHistoricoVoltar.addEventListener("click", () => mostrarTela("inicio"));
