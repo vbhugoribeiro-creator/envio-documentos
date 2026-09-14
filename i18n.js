@@ -70,6 +70,8 @@ const TRADUCOES = {
     badge_qr_duvida: "⚠ QR não lido",
     remover_aria: "Remover documento {n}",
 
+    aviso_lote_grande: "Este lote está demasiado grande para enviar automaticamente — remove alguns documentos antes de enviar.",
+
     // --- Envio ---
     preparar: "A preparar...",
     a_enviar: "A enviar...",
@@ -169,6 +171,8 @@ const TRADUCOES = {
     badge_qr_ok: "✓ QR read",
     badge_qr_duvida: "⚠ QR not read",
     remover_aria: "Remove document {n}",
+
+    aviso_lote_grande: "This batch is too large to send automatically — remove some documents before sending.",
 
     // --- Sending ---
     preparar: "Preparing...",

@@ -43,6 +43,8 @@ const TRADUCOES = {
     chk_zip: "Comprimir tudo num único ficheiro .zip antes de enviar",
     nome_zip: "documentos",
 
+    aviso_lote_grande: "Este lote está demasiado grande para enviar automaticamente — remove alguns ficheiros antes de enviar.",
+
     // --- Envio ---
     a_preparar: "A preparar...",
     a_enviar: "A enviar...",
@@ -111,6 +113,8 @@ const TRADUCOES = {
     remover_aria: "Remove {nome}",
     chk_zip: "Compress everything into one .zip file before sending",
     nome_zip: "documents",
+
+    aviso_lote_grande: "This batch is too large to send automatically — remove some files before sending.",
 
     // --- Sending ---
     a_preparar: "Preparing...",

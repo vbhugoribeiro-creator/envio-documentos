@@ -30,6 +30,17 @@ const EMAIL_DESTINO = "vb.hugo.ribeiro@gmail.com";
 // (Web Share / descarregar + mailto:), nunca perde a capacidade de enviar.
 const WORKER_URL = "https://api.vanessabranco.pt/enviar";
 
+// Medidor de tamanho do lote (2026-09-14, pedido explícito do utilizador)
+// -- o Worker só envia automaticamente até este limite (ver
+// contaclick-worker/src/index.js, LIMITE_BASE64_BYTES); acima disto cai
+// sempre para o modo manual de qualquer forma, por isso vale a pena avisar
+// ANTES de tentar, para o cliente poder tirar documentos do lote em vez de
+// só descobrir depois de já ter "enviado". 25MB é um número redondo com
+// margem folgada por baixo do limite real (~28-29MB de ficheiros
+// originais, ver conversa 2026-09-14).
+const LIMITE_ENVIO_BYTES = 25 * 1024 * 1024;
+const LIMIAR_AVISO_BYTES = 15 * 1024 * 1024;
+
 // ---------------------------------------------------------------------
 // Idioma (PT predefinido / EN) -- ver i18n.js para a tabela de textos.
 // A escolha fica guardada no telemóvel; à primeira vez arranca na língua
@@ -99,6 +110,9 @@ const tituloInicio = document.getElementById("titulo-inicio");
 const textoInicio = document.getElementById("texto-inicio");
 const tituloLote = document.getElementById("titulo-lote");
 const listaLote = document.getElementById("lista-lote");
+const medidorPreenchimento = document.getElementById("medidor-preenchimento");
+const medidorTexto = document.getElementById("medidor-texto");
+const avisoTamanhoLote = document.getElementById("aviso-tamanho-lote");
 const enderecoEnvioConfirmar = document.getElementById("endereco-envio-confirmar");
 enderecoEnvioConfirmar.textContent = EMAIL_DESTINO;
 const confirmarPassos = document.getElementById("confirmar-passos");
@@ -542,6 +556,27 @@ function renderizarLote() {
     cartao.append(imgWrap, info, btnRemover);
     listaLote.appendChild(cartao);
   });
+  atualizarMedidorTamanho();
+}
+
+// Estimativa do tamanho final -- soma das fotos originais (documento +
+// QR), que é um bom substituto do tamanho do PDF gerado (a conversão não
+// muda muito o tamanho total, é a mesma imagem só reembrulhada).
+function tamanhoEstimadoDocumento(doc) {
+  return (doc.fotoDocBlob ? doc.fotoDocBlob.size : 0) + (doc.fotoQrBlob ? doc.fotoQrBlob.size : 0);
+}
+
+function atualizarMedidorTamanho() {
+  const total = documentos.reduce((soma, doc) => soma + tamanhoEstimadoDocumento(doc), 0);
+  const excedido = total > LIMITE_ENVIO_BYTES;
+  const percentagem = Math.min(100, (total / LIMITE_ENVIO_BYTES) * 100);
+  medidorPreenchimento.style.width = `${percentagem}%`;
+  medidorPreenchimento.classList.toggle("aviso", total > LIMIAR_AVISO_BYTES && !excedido);
+  medidorPreenchimento.classList.toggle("excedido", excedido);
+  medidorTexto.textContent = `${(total / 1024 / 1024).toFixed(1)} MB / 25 MB`;
+  avisoTamanhoLote.classList.toggle("oculto", !excedido);
+  btnPartilhar.disabled = excedido;
+  return excedido;
 }
 
 document.getElementById("btn-adicionar-lote").addEventListener("click", () => {
@@ -624,6 +659,7 @@ const btnPartilhar = document.getElementById("btn-partilhar");
 
 async function enviarLote() {
   if (documentos.length === 0) return;
+  if (atualizarMedidorTamanho()) return; // lote grande demais -- botão já ficou desativado, defesa extra
   const textoOriginal = btnPartilhar.textContent;
   btnPartilhar.textContent = t("preparar");
   btnPartilhar.disabled = true;

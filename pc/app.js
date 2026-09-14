@@ -29,6 +29,14 @@ const EMAIL_DESTINO = "vb.hugo.ribeiro@gmail.com";
 // lógica da app do telemóvel.
 const WORKER_URL = "https://api.vanessabranco.pt/enviar";
 
+// Medidor de tamanho do lote (2026-09-14, pedido explícito do utilizador)
+// -- mesma lógica e mesmo limite da app do telemóvel (ver app.js). Aplica-
+// se sempre aos ficheiros ORIGINAIS, quer a opção "Comprimir num .zip"
+// esteja marcada ou não -- comprimir um PDF/imagem já comprimido não
+// costuma poupar espaço a sério, por isso o medidor não finge que sim.
+const LIMITE_ENVIO_BYTES = 25 * 1024 * 1024;
+const LIMIAR_AVISO_BYTES = 15 * 1024 * 1024;
+
 const EXT_IMAGEM_CONVERTIVEL = /^image\/(jpeg|png|webp|gif|bmp)$/i;
 
 // ---------------------------------------------------------------------
@@ -76,6 +84,9 @@ const listaLote = document.getElementById("lista-lote");
 const tituloLote = document.getElementById("titulo-lote");
 const btnEnviar = document.getElementById("btn-enviar");
 const chkZip = document.getElementById("chk-zip");
+const medidorPreenchimento = document.getElementById("medidor-preenchimento");
+const medidorTexto = document.getElementById("medidor-texto");
+const avisoTamanhoLote = document.getElementById("aviso-tamanho-lote");
 const confirmarPassos = document.getElementById("confirmar-passos");
 const confirmarTextoShare = document.getElementById("confirmar-texto-share");
 const confirmarTitulo = document.getElementById("confirmar-titulo");
@@ -252,6 +263,20 @@ function renderizarLote() {
     cartao.append(ic, info, btnRemover);
     listaLote.appendChild(cartao);
   });
+  atualizarMedidorTamanho();
+}
+
+function atualizarMedidorTamanho() {
+  const total = documentos.reduce((soma, doc) => soma + (doc.file ? doc.file.size : 0), 0);
+  const excedido = total > LIMITE_ENVIO_BYTES;
+  const percentagem = Math.min(100, (total / LIMITE_ENVIO_BYTES) * 100);
+  medidorPreenchimento.style.width = `${percentagem}%`;
+  medidorPreenchimento.classList.toggle("aviso", total > LIMIAR_AVISO_BYTES && !excedido);
+  medidorPreenchimento.classList.toggle("excedido", excedido);
+  medidorTexto.textContent = `${formatarTamanho(total)} / 25 MB`;
+  avisoTamanhoLote.classList.toggle("oculto", !excedido);
+  btnEnviar.disabled = excedido;
+  return excedido;
 }
 
 // ---------------------------------------------------------------------
@@ -384,6 +409,7 @@ function nomeZipComData() {
 
 async function enviar() {
   if (documentos.length === 0) return;
+  if (atualizarMedidorTamanho()) return; // lote grande demais -- botão já ficou desativado, defesa extra
   const textoOriginal = btnEnviar.textContent;
   btnEnviar.textContent = t("a_preparar");
   btnEnviar.disabled = true;

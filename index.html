@@ -22,6 +22,7 @@
     --muted:#9db2c0;
     --ok:#5fb98a;
     --warn:#e0a541;
+    --perigo:#d9634a;
   }
   *{box-sizing:border-box;}
   html,body{height:100%;}
@@ -205,6 +206,23 @@
   #tela-lote{gap:12px; padding-top:16px; overflow-y:auto;}
   #tela-lote h1{font-size:18px; margin:0; font-weight:700; text-align:center;}
   .lista-lote{display:flex; flex-direction:column; gap:10px;}
+  .medidor-tamanho{display:flex; flex-direction:column; gap:5px; padding:2px 2px 0;}
+  .medidor-barra{
+    height:8px; border-radius:999px; background:var(--navy-700);
+    overflow:hidden;
+  }
+  .medidor-preenchimento{
+    height:100%; border-radius:999px; width:0%;
+    background:var(--ok);
+    transition:width .2s, background-color .2s;
+  }
+  .medidor-preenchimento.aviso{background:var(--warn);}
+  .medidor-preenchimento.excedido{background:var(--perigo);}
+  .medidor-texto{font-size:11.5px; color:var(--muted); text-align:right;}
+  .aviso-tamanho{
+    font-size:12.5px; color:var(--perigo); font-weight:700;
+    text-align:center; line-height:1.5; margin:0; padding:0 4px;
+  }
   .cartao-lote{
     background:var(--navy-800);
     border-radius:14px;
@@ -410,6 +428,11 @@
   <section id="tela-lote" class="tela">
     <h1 id="titulo-lote" data-i18n="lote_titulo_1">1 documento pronto</h1>
     <div class="lista-lote" id="lista-lote"></div>
+    <div class="medidor-tamanho">
+      <div class="medidor-barra"><div class="medidor-preenchimento" id="medidor-preenchimento"></div></div>
+      <div class="medidor-texto" id="medidor-texto">0 MB / 25 MB</div>
+    </div>
+    <p class="aviso-tamanho oculto" id="aviso-tamanho-lote" data-i18n="aviso_lote_grande">Este lote está demasiado grande para enviar automaticamente — remove alguns documentos antes de enviar.</p>
     <button class="btn-secundario btn-full" id="btn-adicionar-outro" data-i18n="btn_adicionar_outro">+ Adicionar outro documento</button>
     <div class="caixa-endereco">
       <span data-i18n="enviar_para">Enviar para:</span>
