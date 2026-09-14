@@ -496,3 +496,48 @@ if ("serviceWorker" in navigator) {
     });
   });
 }
+
+// ---------------------------------------------------------------------
+// "Instalar no ambiente de trabalho" -- pedido explícito do utilizador,
+// 2026-09-14, mesma razão da app do telemóvel: muita gente não conhece o
+// ícone de instalar escondido na barra de endereço do browser, por isso
+// fica também um botão visível dentro da própria página.
+//
+// Chrome/Edge (Windows): disparam "beforeinstallprompt" quando a app
+// cumpre os requisitos -- guarda o evento e usa-o quando o botão for
+// clicado, tal como na app do telemóvel. Outros browsers (Firefox, Safari
+// no Mac) nunca disparam este evento -- por isso a nota com os passos
+// manuais fica visível por padrão, e só é escondida (a favor do botão) se
+// o evento chegar mesmo a disparar.
+// ---------------------------------------------------------------------
+const btnInstalar = document.getElementById("btn-instalar");
+const notaInstalarManual = document.getElementById("nota-instalar-manual");
+let promptInstalacaoDiferido = null;
+
+function aCorrerInstalada() {
+  return window.matchMedia("(display-mode: standalone)").matches;
+}
+
+if (aCorrerInstalada()) {
+  notaInstalarManual.classList.add("oculto");
+} else {
+  window.addEventListener("beforeinstallprompt", (evento) => {
+    evento.preventDefault();
+    promptInstalacaoDiferido = evento;
+    btnInstalar.classList.remove("oculto");
+    notaInstalarManual.classList.add("oculto");
+  });
+}
+
+btnInstalar.addEventListener("click", async () => {
+  if (!promptInstalacaoDiferido) return;
+  promptInstalacaoDiferido.prompt();
+  await promptInstalacaoDiferido.userChoice;
+  promptInstalacaoDiferido = null;
+  btnInstalar.classList.add("oculto");
+});
+
+window.addEventListener("appinstalled", () => {
+  btnInstalar.classList.add("oculto");
+  notaInstalarManual.classList.add("oculto");
+});

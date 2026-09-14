@@ -20,6 +20,9 @@ const TRADUCOES = {
     drop_linha1: "Arrasta ficheiros para aqui",
     drop_linha2: "ou clica para escolher no computador",
     drop_aria: "Escolher ficheiros",
+    btn_instalar: "📌 Instalar no ambiente de trabalho",
+    nota_instalar_manual:
+      "Para instalar no ambiente de trabalho: no Chrome/Edge, clica no ícone de instalar (⊕ ou uma seta) do lado direito da barra de endereço.",
 
     // --- Lote ---
     lote_titulo_1: "1 documento pronto",
@@ -86,6 +89,9 @@ const TRADUCOES = {
     drop_linha1: "Drag files here",
     drop_linha2: "or click to choose from your computer",
     drop_aria: "Choose files",
+    btn_instalar: "📌 Install to desktop",
+    nota_instalar_manual:
+      "To install to your desktop: in Chrome/Edge, click the install icon (⊕ or an arrow) on the right side of the address bar.",
 
     // --- Batch ---
     lote_titulo_1: "1 document ready",
