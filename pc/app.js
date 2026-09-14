@@ -519,6 +519,18 @@ function nomeZipComData() {
 async function enviar() {
   if (documentos.length === 0) return;
   if (await atualizarMedidorTamanho()) return; // lote grande demais -- botão já ficou desativado, defesa extra
+
+  // Pedido explícito do utilizador, 2026-09-14: o aviso "já enviado
+  // antes" (ver adicionarFicheiros/carregarHistoricoConhecido) não
+  // bloqueia sozinho -- mas ao carregar em enviar com algum ficheiro
+  // marcado, pede uma confirmação extra em vez de deixar passar em
+  // silêncio.
+  const marcados = documentos.filter((d) => d.dataEnvioAnterior).length;
+  if (marcados > 0) {
+    const chave = marcados === 1 ? "confirmar_envio_repetido_1" : "confirmar_envio_repetido_n";
+    if (!confirm(t(chave, { n: marcados }))) return;
+  }
+
   const textoOriginal = btnEnviar.textContent;
   btnEnviar.textContent = t("a_preparar");
   btnEnviar.disabled = true;

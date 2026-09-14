@@ -52,6 +52,8 @@ const TRADUCOES = {
     btn_cancelar_lote: "Cancelar",
     confirmar_cancelar_lote: "Descartar todos os ficheiros deste lote? Não fica nada guardado.",
     aviso_ja_enviado: "⚠ já enviaste um ficheiro com este nome em {data}",
+    confirmar_envio_repetido_1: "1 ficheiro deste lote parece já ter sido enviado antes. Enviar mesmo assim?",
+    confirmar_envio_repetido_n: "{n} ficheiros deste lote parecem já ter sido enviados antes. Enviar mesmo assim?",
 
     // --- Envio ---
     a_preparar: "A preparar...",
@@ -132,6 +134,8 @@ const TRADUCOES = {
     btn_cancelar_lote: "Cancel",
     confirmar_cancelar_lote: "Discard all files in this batch? Nothing will be saved.",
     aviso_ja_enviado: "⚠ you already sent a file with this name on {data}",
+    confirmar_envio_repetido_1: "1 file in this batch looks like it was already sent before. Send it anyway?",
+    confirmar_envio_repetido_n: "{n} files in this batch look like they were already sent before. Send them anyway?",
 
     // --- Sending ---
     a_preparar: "Preparing...",
