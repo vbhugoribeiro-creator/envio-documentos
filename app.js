@@ -765,6 +765,13 @@ async function enviarLote() {
 
 btnPartilhar.addEventListener("click", enviarLote);
 
+document.getElementById("btn-cancelar-lote").addEventListener("click", () => {
+  if (documentos.length === 0) return;
+  if (!confirm(t("confirmar_cancelar_lote"))) return;
+  documentos = [];
+  mostrarTela("inicio");
+});
+
 // ---------------------------------------------------------------------
 // Início / novo documento / terminar / erro
 // ---------------------------------------------------------------------

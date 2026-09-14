@@ -76,6 +76,8 @@ const TRADUCOES = {
     remover_aria: "Remover documento {n}",
 
     aviso_lote_grande: "Este lote está demasiado grande para enviar automaticamente — remove alguns documentos antes de enviar.",
+    btn_cancelar_lote: "Cancelar",
+    confirmar_cancelar_lote: "Descartar todos os documentos deste lote? Não fica nada guardado.",
 
     // --- Envio ---
     preparar: "A preparar...",
@@ -183,6 +185,8 @@ const TRADUCOES = {
     remover_aria: "Remove document {n}",
 
     aviso_lote_grande: "This batch is too large to send automatically — remove some documents before sending.",
+    btn_cancelar_lote: "Cancel",
+    confirmar_cancelar_lote: "Discard all documents in this batch? Nothing will be saved.",
 
     // --- Sending ---
     preparar: "Preparing...",

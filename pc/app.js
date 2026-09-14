@@ -107,6 +107,7 @@ const listaLote = document.getElementById("lista-lote");
 const tituloLote = document.getElementById("titulo-lote");
 const btnEnviar = document.getElementById("btn-enviar");
 const chkZip = document.getElementById("chk-zip");
+chkZip.addEventListener("change", () => atualizarMedidorTamanho());
 const medidorPreenchimento = document.getElementById("medidor-preenchimento");
 const medidorTexto = document.getElementById("medidor-texto");
 const avisoTamanhoLote = document.getElementById("aviso-tamanho-lote");
@@ -289,17 +290,50 @@ function renderizarLote() {
   atualizarMedidorTamanho();
 }
 
-function atualizarMedidorTamanho() {
-  const total = documentos.reduce((soma, doc) => soma + (doc.file ? doc.file.size : 0), 0);
+function aplicarMedidorTamanho(total, aCalcular) {
   const excedido = total > LIMITE_ENVIO_BYTES;
   const percentagem = Math.min(100, (total / LIMITE_ENVIO_BYTES) * 100);
   medidorPreenchimento.style.width = `${percentagem}%`;
   medidorPreenchimento.classList.toggle("aviso", total > LIMIAR_AVISO_BYTES && !excedido);
   medidorPreenchimento.classList.toggle("excedido", excedido);
-  medidorTexto.textContent = `${formatarTamanho(total)} / 25 MB`;
+  medidorTexto.textContent = aCalcular ? t("a_calcular") : `${formatarTamanho(total)} / 25 MB`;
   avisoTamanhoLote.classList.toggle("oculto", !excedido);
   btnEnviar.disabled = excedido;
   return excedido;
+}
+
+// Chamada em cada mudança do lote (adicionar/remover ficheiro) e sempre
+// que a caixa "Comprimir num .zip" muda -- pedido explícito do
+// utilizador, 2026-09-14: sem isto a barra continuava a mostrar a soma
+// dos ficheiros originais mesmo depois de marcar "Comprimir", o que não
+// refletia o tamanho real que ia ser enviado. Sem compressão marcada, o
+// cálculo é instantâneo (só soma bytes); com compressão marcada, gera
+// mesmo o .zip para saber o tamanho real (mais lento, por isso mostra
+// "A calcular..." enquanto isso). `pedidoAtual` evita que um cálculo
+// lento e antigo sobreponha um resultado mais recente se o lote mudar
+// outra vez a meio.
+let pedidoMedidorAtual = 0;
+
+async function atualizarMedidorTamanho() {
+  const totalOriginal = documentos.reduce((soma, doc) => soma + (doc.file ? doc.file.size : 0), 0);
+
+  if (!chkZip.checked || documentos.length === 0) {
+    pedidoMedidorAtual++;
+    return aplicarMedidorTamanho(totalOriginal, false);
+  }
+
+  const esteId = ++pedidoMedidorAtual;
+  aplicarMedidorTamanho(totalOriginal, true);
+  try {
+    const ficheirosPreparados = await prepararFicheiros();
+    const zip = await ficheirosParaZip(ficheirosPreparados, nomeZipComData());
+    if (esteId !== pedidoMedidorAtual) return; // o lote já mudou outra vez entretanto
+    return aplicarMedidorTamanho(zip.size, false);
+  } catch (e) {
+    console.error("Falha a calcular o tamanho comprimido, a mostrar o tamanho original:", e);
+    if (esteId !== pedidoMedidorAtual) return;
+    return aplicarMedidorTamanho(totalOriginal, false);
+  }
 }
 
 // ---------------------------------------------------------------------
@@ -433,7 +467,7 @@ function nomeZipComData() {
 
 async function enviar() {
   if (documentos.length === 0) return;
-  if (atualizarMedidorTamanho()) return; // lote grande demais -- botão já ficou desativado, defesa extra
+  if (await atualizarMedidorTamanho()) return; // lote grande demais -- botão já ficou desativado, defesa extra
   const textoOriginal = btnEnviar.textContent;
   btnEnviar.textContent = t("a_preparar");
   btnEnviar.disabled = true;
@@ -497,6 +531,13 @@ async function enviar() {
 }
 
 btnEnviar.addEventListener("click", enviar);
+
+document.getElementById("btn-cancelar-lote").addEventListener("click", () => {
+  if (documentos.length === 0) return;
+  if (!confirm(t("confirmar_cancelar_lote"))) return;
+  documentos = [];
+  mostrarTela("inicio");
+});
 
 document.getElementById("btn-abrir-email").addEventListener("click", () => {
   const assunto = encodeURIComponent(t("email_assunto"));

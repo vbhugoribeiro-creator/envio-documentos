@@ -49,10 +49,13 @@ const TRADUCOES = {
     nome_zip: "documentos",
 
     aviso_lote_grande: "Este lote está demasiado grande para enviar automaticamente — remove alguns ficheiros antes de enviar.",
+    btn_cancelar_lote: "Cancelar",
+    confirmar_cancelar_lote: "Descartar todos os ficheiros deste lote? Não fica nada guardado.",
 
     // --- Envio ---
     a_preparar: "A preparar...",
     a_enviar: "A enviar...",
+    a_calcular: "A calcular tamanho...",
     aviso_envio_automatico_falhou:
       "Não consegui enviar automaticamente (sem ligação ou lote grande demais) — segue estes passos para enviar à mão.",
     erro_pdf: "Não consegui preparar um dos ficheiros. Tenta outra vez.",
@@ -125,10 +128,13 @@ const TRADUCOES = {
     nome_zip: "documents",
 
     aviso_lote_grande: "This batch is too large to send automatically — remove some files before sending.",
+    btn_cancelar_lote: "Cancel",
+    confirmar_cancelar_lote: "Discard all files in this batch? Nothing will be saved.",
 
     // --- Sending ---
     a_preparar: "Preparing...",
     a_enviar: "Sending...",
+    a_calcular: "Calculating size...",
     aviso_envio_automatico_falhou:
       "Couldn't send automatically (no connection or batch too large) — follow these steps to send manually.",
     erro_pdf: "I couldn't prepare one of the files. Please try again.",
