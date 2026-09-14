@@ -81,6 +81,37 @@ let tokenCliente = null;
   }
 })();
 
+// ---------------------------------------------------------------------
+// Aviso "já enviado antes" (2026-09-14, pedido explícito do utilizador)
+// -- só possível com um link pessoal (sem token não há histórico a
+// comparar). Carregado uma vez ao abrir a app (não bloqueia nada, corre
+// em paralelo); se um ficheiro adicionado ao lote bater nome+tamanho com
+// algo já enviado antes por este link, fica marcado com um aviso -- não
+// impede de enviar (pode ser mesmo intencional), só avisa. Duplicado
+// DENTRO do mesmo lote já era tratado à parte, ver adicionarFicheiros().
+let historicoConhecido = null; // Map "nome|tamanho" -> data do envio anterior
+
+async function carregarHistoricoConhecido() {
+  if (!tokenCliente) return;
+  try {
+    const resposta = await fetch(`${WORKER_BASE_URL}/historico?token=${encodeURIComponent(tokenCliente)}`);
+    const dados = await resposta.json();
+    const mapa = new Map();
+    for (const envio of dados.envios || []) {
+      for (const nome of envio.ficheiros) {
+        // Só se sabe o tamanho TOTAL do envio, não por ficheiro -- ainda
+        // assim o nome sozinho já é um bom sinal de "provavelmente o
+        // mesmo ficheiro", e evita reprocessar o zip para decompor.
+        if (!mapa.has(nome)) mapa.set(nome, envio.enviado_em);
+      }
+    }
+    historicoConhecido = mapa;
+  } catch (e) {
+    console.error("Falha a carregar histórico conhecido (aviso de duplicado fica desativado):", e);
+  }
+}
+carregarHistoricoConhecido();
+
 function t(chave, params) {
   const tabela = TRADUCOES[idioma] || TRADUCOES.pt;
   let texto = tabela[chave];
@@ -235,7 +266,8 @@ function adicionarFicheiros(fileList) {
       (d) => d.file.name === file.name && d.file.size === file.size
     );
     if (jaLa) continue;
-    documentos.push({ file, nome: file.name, tipo: classificarFicheiro(file) });
+    const dataAnterior = historicoConhecido ? historicoConhecido.get(file.name) : null;
+    documentos.push({ file, nome: file.name, tipo: classificarFicheiro(file), dataEnvioAnterior: dataAnterior || null });
   }
   renderizarLote();
   mostrarTela("lote");
@@ -273,6 +305,13 @@ function renderizarLote() {
     meta.className = "meta" + (doc.tipo === "convertido" ? " convertido" : "");
     meta.textContent = `${formatarTamanho(doc.file.size)} · ${rotuloTipo}`;
     info.append(nome, meta);
+    if (doc.dataEnvioAnterior) {
+      const aviso = document.createElement("span");
+      aviso.className = "meta aviso-duplicado";
+      const data = new Date(doc.dataEnvioAnterior).toLocaleDateString(idioma === "en" ? "en-GB" : "pt-PT");
+      aviso.textContent = t("aviso_ja_enviado", { data });
+      info.append(aviso);
+    }
 
     const btnRemover = document.createElement("button");
     btnRemover.className = "btn-remover-lote";

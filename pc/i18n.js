@@ -51,6 +51,7 @@ const TRADUCOES = {
     aviso_lote_grande: "Este lote está demasiado grande para enviar automaticamente — remove alguns ficheiros antes de enviar.",
     btn_cancelar_lote: "Cancelar",
     confirmar_cancelar_lote: "Descartar todos os ficheiros deste lote? Não fica nada guardado.",
+    aviso_ja_enviado: "⚠ já enviaste um ficheiro com este nome em {data}",
 
     // --- Envio ---
     a_preparar: "A preparar...",
@@ -130,6 +131,7 @@ const TRADUCOES = {
     aviso_lote_grande: "This batch is too large to send automatically — remove some files before sending.",
     btn_cancelar_lote: "Cancel",
     confirmar_cancelar_lote: "Discard all files in this batch? Nothing will be saved.",
+    aviso_ja_enviado: "⚠ you already sent a file with this name on {data}",
 
     // --- Sending ---
     a_preparar: "Preparing...",
