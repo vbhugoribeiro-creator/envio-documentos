@@ -67,8 +67,7 @@ const TRADUCOES = {
     btn_copiado: "Copiado!",
     copiar_aria: "Copiar endereço",
     btn_partilhar: "Enviar tudo »",
-    nota_envio_html:
-      "Toca em \"Enviar tudo\" e escolhe o <strong>Gmail</strong> (ou Mail) na lista que aparece — não o WhatsApp, para o(s) documento(s) chegar(em) ao escritório. Confirma o destinatário acima antes de enviares (o telemóvel não o preenche sozinho).",
+    nota_envio: "Ao tocares em \"Enviar tudo\", os documentos são enviados automaticamente para a contabilidade.",
     doc_item: "Documento {n}",
     badge_sem_qr: "Sem código QR",
     badge_qr_ok: "✓ QR lido",
@@ -176,8 +175,7 @@ const TRADUCOES = {
     btn_copiado: "Copied!",
     copiar_aria: "Copy address",
     btn_partilhar: "Send all »",
-    nota_envio_html:
-      "Tap \"Send all\" and pick <strong>Gmail</strong> (or Mail) from the list that appears — not WhatsApp, so the document(s) reach the office. Check the recipient above before sending (your phone won't fill it in automatically).",
+    nota_envio: "Tapping \"Send all\" sends the documents automatically to the office.",
     doc_item: "Document {n}",
     badge_sem_qr: "No QR code",
     badge_qr_ok: "✓ QR read",

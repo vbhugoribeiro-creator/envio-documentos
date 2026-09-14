@@ -148,7 +148,6 @@ const confirmarTitulo = document.getElementById("confirmar-titulo");
 const confirmarNota = document.getElementById("confirmar-nota");
 const avisoFallbackAutomatico = document.getElementById("aviso-fallback-automatico");
 
-document.getElementById("endereco-envio").textContent = EMAIL_DESTINO;
 document.getElementById("endereco-envio-2").textContent = EMAIL_DESTINO;
 
 // Cada item: { file: File original, nome, tipo: "pdf"|"convertido"|"outro" }
@@ -599,7 +598,6 @@ function ligarCopiar(idBotao) {
     }
   });
 }
-ligarCopiar("btn-copiar-endereco");
 ligarCopiar("btn-copiar-endereco-2");
 
 // ---------------------------------------------------------------------

@@ -132,8 +132,6 @@ const fotoPreviewDoc = document.getElementById("foto-preview-doc");
 const resultadoQr = document.getElementById("resultado-qr");
 const cartaoQr = document.getElementById("cartao-qr");
 const erroTexto = document.getElementById("erro-texto");
-const enderecoEnvio = document.getElementById("endereco-envio");
-enderecoEnvio.textContent = EMAIL_DESTINO;
 const tituloInicio = document.getElementById("titulo-inicio");
 const textoInicio = document.getElementById("texto-inicio");
 const tituloLote = document.getElementById("titulo-lote");
@@ -166,7 +164,6 @@ function ligarCopiar(idBotao) {
     }
   });
 }
-ligarCopiar("btn-copiar-endereco");
 ligarCopiar("btn-copiar-endereco-confirmar");
 
 let streamAtual = null;
