@@ -42,6 +42,9 @@ const TRADUCOES = {
 
     // --- Envio ---
     a_preparar: "A preparar...",
+    a_enviar: "A enviar...",
+    aviso_envio_automatico_falhou:
+      "Não consegui enviar automaticamente (sem ligação ou lote grande demais) — segue estes passos para enviar à mão.",
     erro_pdf: "Não consegui preparar um dos ficheiros. Tenta outra vez.",
     share_title: "Documentos para a contabilidade",
     share_text: "Documentos para a contabilidade (enviar para {email}).",
@@ -105,6 +108,9 @@ const TRADUCOES = {
 
     // --- Sending ---
     a_preparar: "Preparing...",
+    a_enviar: "Sending...",
+    aviso_envio_automatico_falhou:
+      "Couldn't send automatically (no connection or batch too large) — follow these steps to send manually.",
     erro_pdf: "I couldn't prepare one of the files. Please try again.",
     share_title: "Documents for the accountant",
     share_text: "Documents for the accountant (send to {email}).",

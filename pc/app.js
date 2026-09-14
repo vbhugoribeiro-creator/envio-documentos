@@ -23,6 +23,12 @@
 // de email do escritório (ver _config_email.json no GaveConta).
 const EMAIL_DESTINO = "vb.hugo.ribeiro@gmail.com";
 
+// Worker Cloudflare que envia o email pelo servidor (2026-09-14) -- ver
+// Desktop\contaclick-worker. Tentado primeiro em enviar(); se falhar cai
+// sempre para o fluxo antigo (Web Share / descarregar + mailto:), mesma
+// lógica da app do telemóvel.
+const WORKER_URL = "https://api.vanessabranco.pt/enviar";
+
 const EXT_IMAGEM_CONVERTIVEL = /^image\/(jpeg|png|webp|gif|bmp)$/i;
 
 // ---------------------------------------------------------------------
@@ -74,6 +80,7 @@ const confirmarPassos = document.getElementById("confirmar-passos");
 const confirmarTextoShare = document.getElementById("confirmar-texto-share");
 const confirmarTitulo = document.getElementById("confirmar-titulo");
 const confirmarNota = document.getElementById("confirmar-nota");
+const avisoFallbackAutomatico = document.getElementById("aviso-fallback-automatico");
 
 document.getElementById("endereco-envio").textContent = EMAIL_DESTINO;
 document.getElementById("endereco-envio-2").textContent = EMAIL_DESTINO;
@@ -258,6 +265,8 @@ function renderizarLote() {
 // tentar outra vez. Pedido explícito do utilizador, 2026-09-11 (reportou
 // o mesmo problema que já tinha acontecido na app do telemóvel).
 // ---------------------------------------------------------------------
+let ultimoFallbackAutomatico = false;
+
 function aplicarTextoConfirmar() {
   const ehShare = modoConfirmarAtual === "share";
   confirmarPassos.classList.toggle("oculto", ehShare);
@@ -269,12 +278,33 @@ function aplicarTextoConfirmar() {
   // mailto: sem anexo nenhum só confundia (mesma lição já aprendida na
   // app do telemóvel: "mailto: nunca anexava o ficheiro").
   document.getElementById("bloco-abrir-email").classList.toggle("oculto", ehShare);
+  // Só aparece quando se tentou o envio automático pelo servidor primeiro
+  // e falhou -- ver tentarEnvioAutomatico().
+  avisoFallbackAutomatico.classList.toggle("oculto", !ultimoFallbackAutomatico);
 }
 
-function mostrarConfirmar(modo) {
+function mostrarConfirmar(modo, falhouAutomatico = false) {
   modoConfirmarAtual = modo;
+  ultimoFallbackAutomatico = falhouAutomatico;
   aplicarTextoConfirmar();
   mostrarTela("confirmar");
+}
+
+// Tenta enviar pelo servidor (Worker + Resend) antes de cair para
+// Web Share / download manual -- ver mesma função na app do telemóvel
+// (app.js), lógica idêntica. Nunca lança exceção para fora.
+async function tentarEnvioAutomatico(ficheiros) {
+  try {
+    const formData = new FormData();
+    for (const ficheiro of ficheiros) {
+      formData.append("files", ficheiro, ficheiro.name);
+    }
+    const resposta = await fetch(WORKER_URL, { method: "POST", body: formData });
+    return resposta.ok;
+  } catch (e) {
+    console.error("Envio automático falhou, a cair para o modo manual:", e);
+    return false;
+  }
 }
 
 document.getElementById("btn-confirmar-enviei").addEventListener("click", () => {
@@ -371,8 +401,16 @@ async function enviar() {
     return;
   }
 
+  btnEnviar.textContent = t("a_enviar");
+  const enviouAutomaticamente = await tentarEnvioAutomatico(ficheirosPreparados);
   btnEnviar.textContent = textoOriginal;
   btnEnviar.disabled = false;
+
+  if (enviouAutomaticamente) {
+    documentos = [];
+    mostrarTela("concluido");
+    return;
+  }
 
   // 1) Partilha nativa de ficheiros, se o browser a suportar (Edge/Chrome
   //    no Windows suportam navigator.share com ficheiros). IMPORTANTE:
@@ -387,7 +425,7 @@ async function enviar() {
         title: t("share_title"),
         text: t("share_text", { email: EMAIL_DESTINO }),
       });
-      mostrarConfirmar("share");
+      mostrarConfirmar("share", true);
       return;
     } catch (e) {
       if (e && e.name === "AbortError") return; // cancelou -- fica no lote, intacto
@@ -405,7 +443,7 @@ async function enviar() {
     a.click();
     a.remove();
   }
-  mostrarConfirmar("manual");
+  mostrarConfirmar("manual", true);
 }
 
 btnEnviar.addEventListener("click", enviar);

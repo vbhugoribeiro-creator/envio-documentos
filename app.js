@@ -24,6 +24,12 @@
 // escritório, ver _config_email.json.
 const EMAIL_DESTINO = "vb.hugo.ribeiro@gmail.com";
 
+// Worker Cloudflare que envia o email pelo servidor (2026-09-14) -- ver
+// Desktop\contaclick-worker. Tentado primeiro em enviarLote(); se falhar
+// (rede em baixo, lote grande demais, etc.) cai sempre para o fluxo antigo
+// (Web Share / descarregar + mailto:), nunca perde a capacidade de enviar.
+const WORKER_URL = "https://api.vanessabranco.pt/enviar";
+
 // ---------------------------------------------------------------------
 // Idioma (PT predefinido / EN) -- ver i18n.js para a tabela de textos.
 // A escolha fica guardada no telemóvel; à primeira vez arranca na língua
@@ -100,6 +106,7 @@ const confirmarTextoShare = document.getElementById("confirmar-texto-share");
 const confirmarTitulo = document.getElementById("confirmar-titulo");
 const confirmarNota = document.getElementById("confirmar-nota");
 const blocoAbrirEmail = document.getElementById("bloco-abrir-email");
+const avisoFallbackAutomatico = document.getElementById("aviso-fallback-automatico");
 
 // Qual a chave de texto de erro da câmara atualmente mostrada -- guardada
 // para que, se o cliente trocar de língua no ecrã de erro, o texto mude também.
@@ -558,6 +565,7 @@ document.getElementById("btn-adicionar-outro").addEventListener("click", () => {
 // utilizador, 2026-09-11 (mesmo problema já corrigido na versão PC).
 // ---------------------------------------------------------------------
 let modoConfirmarAtual = "manual"; // "manual" | "share"
+let ultimoFallbackAutomatico = false;
 
 function aplicarTextoConfirmar() {
   const ehShare = modoConfirmarAtual === "share";
@@ -568,12 +576,35 @@ function aplicarTextoConfirmar() {
   // "Abrir o email" só faz sentido depois de ter descarregado ficheiros
   // (modo manual) -- em modo partilha nada foi descarregado.
   blocoAbrirEmail.classList.toggle("oculto", ehShare);
+  // Só aparece quando se tentou o envio automático pelo servidor primeiro
+  // e falhou -- para não alarmar quando é só o caminho normal (telemóvel
+  // sem suporte a Web Share, por exemplo).
+  avisoFallbackAutomatico.classList.toggle("oculto", !ultimoFallbackAutomatico);
 }
 
-function mostrarConfirmar(modo) {
+function mostrarConfirmar(modo, falhouAutomatico = false) {
   modoConfirmarAtual = modo;
+  ultimoFallbackAutomatico = falhouAutomatico;
   aplicarTextoConfirmar();
   mostrarTela("confirmar");
+}
+
+// Tenta enviar pelo servidor (Worker + Resend) -- devolve true se o email
+// já saiu mesmo, sem precisar de confirmação manual do cliente. Nunca
+// lança exceção para fora: qualquer falha (rede, Worker em baixo, lote
+// grande demais) devolve false e enviarLote() cai para o fluxo antigo.
+async function tentarEnvioAutomatico(ficheiros) {
+  try {
+    const formData = new FormData();
+    for (const ficheiro of ficheiros) {
+      formData.append("files", ficheiro, ficheiro.name);
+    }
+    const resposta = await fetch(WORKER_URL, { method: "POST", body: formData });
+    return resposta.ok;
+  } catch (e) {
+    console.error("Envio automático falhou, a cair para o modo manual:", e);
+    return false;
+  }
 }
 
 document.getElementById("btn-confirmar-enviei").addEventListener("click", () => {
@@ -615,8 +646,16 @@ async function enviarLote() {
     return;
   }
 
+  btnPartilhar.textContent = t("a_enviar");
+  const enviouAutomaticamente = await tentarEnvioAutomatico(ficheiros);
   btnPartilhar.textContent = textoOriginal;
   btnPartilhar.disabled = false;
+
+  if (enviouAutomaticamente) {
+    documentos = [];
+    mostrarTela("concluido");
+    return;
+  }
 
   // "mailto: + descarregar" (tentado antes, 2026-09-09) foi abandonado --
   // confirmado em teste real que os emails chegavam SEM anexo nenhum.
@@ -635,7 +674,7 @@ async function enviarLote() {
         title: t("share_title"),
         text: t("share_text", { email: EMAIL_DESTINO }),
       });
-      mostrarConfirmar("share");
+      mostrarConfirmar("share", true);
       return;
     } catch (e) {
       if (e && e.name === "AbortError") {
@@ -656,7 +695,7 @@ async function enviarLote() {
     a.click();
     a.remove();
   }
-  mostrarConfirmar("manual");
+  mostrarConfirmar("manual", true);
 }
 
 btnPartilhar.addEventListener("click", enviarLote);

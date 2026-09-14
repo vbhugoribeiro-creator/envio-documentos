@@ -72,6 +72,9 @@ const TRADUCOES = {
 
     // --- Envio ---
     preparar: "A preparar...",
+    a_enviar: "A enviar...",
+    aviso_envio_automatico_falhou:
+      "Não consegui enviar automaticamente (sem ligação ou lote grande demais) — segue estes passos para enviar à mão.",
     erro_pdf: "Não consegui juntar as fotos em PDF. Tenta outra vez.",
     share_title: "Documentos",
     share_text: "Documentos para a contabilidade (enviar para {email}).",
@@ -169,6 +172,9 @@ const TRADUCOES = {
 
     // --- Sending ---
     preparar: "Preparing...",
+    a_enviar: "Sending...",
+    aviso_envio_automatico_falhou:
+      "Couldn't send automatically (no connection or batch too large) — follow these steps to send manually.",
     erro_pdf: "I couldn't combine the photos into a PDF. Please try again.",
     share_title: "Documents",
     share_text: "Documents for the accountant (send to {email}).",
