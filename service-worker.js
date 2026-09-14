@@ -9,7 +9,7 @@
 // para ele. Sem isto, quem já tinha a app aberta/instalada continuava a
 // ver a versão antiga em cache, mesmo depois de publicada a correção.
 // Bug real, visto em teste, 2026-09-09.
-const CACHE_NOME = "docs-cliente-v19";
+const CACHE_NOME = "docs-cliente-v20";
 const FICHEIROS_CASCA = [
   "./",
   "./index.html",
@@ -20,6 +20,7 @@ const FICHEIROS_CASCA = [
   "./manifest.json",
   "./icon-192.png",
   "./icon-512.png",
+  "./logo_vanessa_branco.png",
 ];
 
 self.addEventListener("install", (evento) => {

@@ -251,7 +251,12 @@
     font-size:11px;
     color:var(--muted);
     flex-shrink:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
   }
+  footer.rodape img{height:26px; width:auto; display:block;}
   .oculto{display:none !important;}
 </style>
 </head>
@@ -363,7 +368,10 @@
     </div>
   </section>
 
-  <footer class="rodape">made by Hugo Ribeiro</footer>
+  <footer class="rodape">
+    <img src="logo_vanessa_branco.png" alt="Vanessa Branco — Accounting and Finance">
+    <span>made by Hugo Ribeiro</span>
+  </footer>
 </div>
 
 <script src="jspdf.umd.min.js"></script>

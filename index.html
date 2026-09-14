@@ -376,11 +376,16 @@
 
   footer.rodape{
     text-align:center;
-    padding:8px 0 12px;
+    padding:10px 0 12px;
     font-size:11px;
     color:var(--muted);
     flex-shrink:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
   }
+  footer.rodape img{height:26px; width:auto; display:block;}
 
   .oculto{display:none !important;}
 </style>
@@ -528,7 +533,10 @@
     <button class="btn-principal" id="btn-tentar-de-novo" data-i18n="btn_tentar_de_novo">Tentar de novo</button>
   </section>
 
-  <footer class="rodape">made by Hugo Ribeiro</footer>
+  <footer class="rodape">
+    <img src="logo_vanessa_branco.png" alt="Vanessa Branco — Accounting and Finance">
+    <span>made by Hugo Ribeiro</span>
+  </footer>
 </div>
 
 <canvas id="canvas-captura" class="oculto"></canvas>

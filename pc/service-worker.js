@@ -5,7 +5,7 @@
 // IMPORTANTE: subir este número sempre que se publicar uma alteração --
 // é o que faz o browser trocar para o service worker novo. Sem isto,
 // quem já tinha a app aberta continuava a ver a versão antiga em cache.
-const CACHE_NOME = "contaclick-pc-v13";
+const CACHE_NOME = "contaclick-pc-v14";
 const FICHEIROS_CASCA = [
   "./",
   "./index.html",
@@ -18,6 +18,7 @@ const FICHEIROS_CASCA = [
   "./icon-512.png",
   "./favicon-32.png",
   "./icon-apple-touch.png",
+  "./logo_vanessa_branco.png",
 ];
 
 self.addEventListener("install", (evento) => {
