@@ -1,6 +1,24 @@
 <!doctype html>
 <html lang="pt-PT">
 <head>
+<script>
+// Esta é a versão TELEMÓVEL (tira fotos). Se abrir num computador,
+// redireciona sozinha para a versão PC (pc/), preservando o link pessoal
+// (?c=TOKEN) -- pedido explícito do utilizador, 2026-09-14: ninguém deve
+// instalar por engano a app errada no aparelho errado. Corre já aqui, no
+// topo do <head>, antes de carregar qualquer coisa -- mesma função
+// ehDispositivoMovel() duplicada (de propósito) na versão PC, com o teste
+// invertido lá.
+(function () {
+  var ua = navigator.userAgent;
+  var ehMovel =
+    /Android|iPhone|iPod|iPad/i.test(ua) ||
+    (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1); // iPadOS 13+ identifica-se como "Macintosh"
+  if (!ehMovel) {
+    window.location.replace("pc/" + window.location.search);
+  }
+})();
+</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ContaClick — Vanessa Branco</title>

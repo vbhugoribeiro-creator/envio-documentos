@@ -1,6 +1,20 @@
 <!doctype html>
 <html lang="pt-PT">
 <head>
+<script>
+// Esta é a versão PC (arrastar ficheiros). Se abrir num telemóvel/tablet,
+// redireciona sozinha para a versão telemóvel (../), preservando o link
+// pessoal (?c=TOKEN) -- ver mesma lógica, invertida, em ../index.html.
+(function () {
+  var ua = navigator.userAgent;
+  var ehMovel =
+    /Android|iPhone|iPod|iPad/i.test(ua) ||
+    (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1);
+  if (ehMovel) {
+    window.location.replace("../" + window.location.search);
+  }
+})();
+</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ContaClick PC — Vanessa Branco</title>
