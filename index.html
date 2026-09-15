@@ -139,6 +139,17 @@
   .botoes-inicio button small{
     font-weight:400; font-size:12px; opacity:.85;
   }
+  .botoes-inicio-secundarios{
+    display:flex; gap:10px;
+  }
+  .btn-pequeno{
+    flex:1;
+    padding:10px 8px;
+    font-size:12.5px;
+  }
+  .btn-pequeno small{
+    font-size:10.5px;
+  }
   .icone-camara-grande{
     width:84px; height:84px; margin:6px auto 0;
     border-radius:22px;
@@ -415,8 +426,10 @@
     <div class="botoes-inicio">
       <button class="btn-principal btn-full" id="btn-iniciar-com-qr" data-i18n-html="btn_com_qr_html">Com código QR<small>2 fotos: QR + documento</small></button>
       <button class="btn-secundario btn-full" id="btn-iniciar-sem-qr" data-i18n-html="btn_sem_qr_html">Sem código QR<small>1 foto só do documento</small></button>
-      <button class="btn-secundario btn-full" id="btn-iniciar-pdf" data-i18n-html="btn_pdf_html">📄 PDF já guardado<small>Recebido por email ou já no telemóvel</small></button>
-      <button class="btn-secundario btn-full" id="btn-iniciar-galeria" data-i18n-html="btn_galeria_html">🖼️ Foto da galeria<small>Uma foto já tirada antes</small></button>
+      <div class="botoes-inicio-secundarios">
+        <button class="btn-secundario btn-pequeno" id="btn-iniciar-pdf" data-i18n-html="btn_pdf_html">📄 PDF já guardado<small>Recebido por email</small></button>
+        <button class="btn-secundario btn-pequeno" id="btn-iniciar-galeria" data-i18n-html="btn_galeria_html">🖼️ Foto da galeria<small>Já tirada antes</small></button>
+      </div>
     </div>
     <input type="file" id="input-pdf" accept="application/pdf" multiple hidden>
     <input type="file" id="input-galeria" accept="image/*" multiple hidden>
