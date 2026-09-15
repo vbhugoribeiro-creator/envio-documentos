@@ -104,6 +104,39 @@ let tokenCliente = null;
   }
 })();
 
+// ---------------------------------------------------------------------
+// Nomes já usados em envios anteriores (2026-09-15) -- os PDFs gerados a
+// partir de fotos (câmara ou "Foto da galeria") têm sempre o mesmo nome
+// base "documento_AAAA-MM-DD.pdf": dois ENVIOS separados no mesmo dia
+// (não duas fotos do mesmo envio, essas já tinham _1/_2 a distingui-las)
+// davam o mesmo nome final -- caso real confirmado, Barbara Bento,
+// 2026-09-15: 3 envios distintos no mesmo dia, todos "documento_2026-09-15.pdf",
+// impossível distinguir pelo nome no email/registo. Carrega o
+// histórico do link (mesmo endpoint usado em "Ver os meus envios") já ao
+// abrir a app, para o ter pronto sem esperar no momento de enviar --
+// enviarLote() usa isto para escolher sempre o primeiro nome ainda não
+// usado nesse dia (ver escolherNomeUnico), em vez de confiar só na hora
+// do relógio (que ainda podia colidir se dois envios saíssem no mesmo
+// segundo).
+// ---------------------------------------------------------------------
+let nomesJaEnviados = new Set();
+
+async function carregarNomesJaEnviados() {
+  if (!tokenCliente) return;
+  try {
+    const resposta = await fetch(`${WORKER_BASE_URL}/historico?token=${encodeURIComponent(tokenCliente)}`);
+    const dados = await resposta.json();
+    const novo = new Set();
+    for (const envio of dados.envios || []) {
+      for (const nome of envio.ficheiros || []) novo.add(nome);
+    }
+    nomesJaEnviados = novo;
+  } catch (e) {
+    console.error("Falha a carregar histórico de nomes (fica só a proteção por hora):", e);
+  }
+}
+carregarNomesJaEnviados();
+
 // t("chave") ou t("chave", { n: 3 }) para os {marcadores} do texto.
 function t(chave, params) {
   const tabela = TRADUCOES[idioma] || TRADUCOES.pt;
@@ -713,6 +746,26 @@ async function enviarLote() {
   btnPartilhar.disabled = true;
 
   const hoje = new Date().toISOString().slice(0, 10);
+  const baseNome = `${t("nome_ficheiro")}_${hoje}`;
+  // Reserva os nomes ANTES de gerar os PDFs (em vez de dentro do
+  // Promise.all, que corre tudo em paralelo) -- escolher o nome livre
+  // tem de ser sequencial, senão duas fotos do mesmo lote podiam ler o
+  // histórico ao mesmo tempo e escolher o mesmo "primeiro nome livre"
+  // uma da outra. Não reserva nada para "ficheiroPronto" -- esse mantém
+  // sempre o nome original do próprio ficheiro.
+  const nomesReservados = new Set(nomesJaEnviados);
+  function escolherNomeUnico() {
+    let candidato = `${baseNome}.pdf`;
+    let contador = 1;
+    while (nomesReservados.has(candidato)) {
+      candidato = `${baseNome}_${contador}.pdf`;
+      contador++;
+    }
+    nomesReservados.add(candidato);
+    return candidato;
+  }
+  const nomesEscolhidos = documentos.map((doc) => (doc.ficheiroPronto ? null : escolherNomeUnico()));
+
   let ficheiros;
   try {
     ficheiros = await Promise.all(
@@ -722,8 +775,7 @@ async function enviarLote() {
         // escolhida da galeria) precisa de ser embrulhada num PDF.
         if (doc.ficheiroPronto) return doc.ficheiroPronto;
         const pdfBlob = await construirPdfDocumento(doc.fotoDocBlob, doc.fotoQrBlob);
-        const sufixo = documentos.length > 1 ? `_${indice + 1}` : "";
-        return new File([pdfBlob], `${t("nome_ficheiro")}_${hoje}${sufixo}.pdf`, { type: "application/pdf" });
+        return new File([pdfBlob], nomesEscolhidos[indice], { type: "application/pdf" });
       })
     );
   } catch (e) {
@@ -742,6 +794,11 @@ async function enviarLote() {
   if (enviouAutomaticamente) {
     documentos = [];
     mostrarTela("concluido");
+    // Atualiza a lista de nomes conhecidos com o que acabou de sair --
+    // sem isto, um 2º lote enviado ainda na mesma visita só ficava
+    // protegido pelos nomes reservados NESTE envio (nomesReservados,
+    // local à função), não pelos nomes que o servidor já confirmou.
+    carregarNomesJaEnviados();
     return;
   }
 

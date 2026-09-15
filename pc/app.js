@@ -496,7 +496,14 @@ function nomeSemColisao(nome, usados) {
 }
 
 async function prepararFicheiros() {
-  const usados = new Set();
+  // Pré-carrega com os nomes já enviados antes por este link (2026-09-15)
+  // -- nomeSemColisao() já evitava colisão DENTRO do mesmo lote, mas não
+  // sabia nada de lotes anteriores. Aqui o risco é menor que no
+  // telemóvel (os ficheiros mantêm o nome original escolhido pelo
+  // cliente, não um nome genérico gerado por nós) mas mesmo assim
+  // acontece -- ex: o mesmo digitalizador a dar sempre "scan.pdf". Mesmo
+  // histórico já usado no aviso de "já enviado antes".
+  const usados = new Set(historicoConhecido ? [...historicoConhecido.keys()].map((n) => n.toLowerCase()) : []);
   return Promise.all(
     documentos.map(async (doc) => {
       if (doc.tipo === "convertido") {
