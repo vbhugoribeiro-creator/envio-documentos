@@ -79,10 +79,23 @@ let tokenCliente = null;
     const tokenDoLink = parametros.get("c");
     if (tokenDoLink) {
       localStorage.setItem("contaclick_token", tokenDoLink);
-      // Tira o token da barra de endereço -- não faz sentido continuar
-      // visível ali depois de já ter ficado guardado.
-      const urlLimpo = window.location.pathname + window.location.hash;
-      window.history.replaceState(null, "", urlLimpo);
+      // NÃO tirar o "?c=" da barra de endereço (correção 2026-09-15,
+      // bug real confirmado com a Barbara Bento: o 1º envio dela, feito
+      // a abrir o link do email diretamente, saiu identificado
+      // corretamente; os seguintes, sem marcador nenhum). Causa: assim
+      // que o token era lido, isto limpava logo o "?c=" da barra de
+      // endereço via replaceState -- se o cliente tocasse em "Fixar app
+      // no ecrã principal" depois disso (fluxo que a própria app
+      // incentiva), o iPhone guarda o ícone a apontar para a URL que
+      // estava na barra NESSE momento, já sem o token. Pior ainda: o
+      // Safari dá ao ícone instalado um armazenamento (localStorage)
+      // separado do separador normal do browser -- por isso nem o token
+      // já guardado ali servia de nada ao abrir pelo ícone. Resultado:
+      // o ícone fixo no ecrã principal ficava para sempre sem token,
+      // mesmo tendo funcionado bem da primeira vez. Mantendo o "?c="
+      // sempre visível no URL, o ícone fixado passa a incluir sempre o
+      // token, em qualquer aparelho -- resolve na origem, não só por
+      // localStorage.
     }
     tokenCliente = localStorage.getItem("contaclick_token");
   } catch (e) {

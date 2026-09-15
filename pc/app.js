@@ -63,6 +63,11 @@ let idioma = "pt";
 // ---------------------------------------------------------------------
 // Token pessoal do cliente (2026-09-14) -- mesma chave localStorage da
 // app do telemóvel, mesma lógica (ver app.js: lerTokenCliente).
+// 2026-09-15: já NÃO tira o "?c=" da barra de endereço -- ver o
+// comentário completo no app.js da versão telemóvel (bug real
+// confirmado, Barbara Bento: ícone fixado no ecrã principal ficava sem
+// token para sempre, porque a barra de endereço já tinha sido limpa
+// antes de o cliente tocar em "Fixar app").
 // ---------------------------------------------------------------------
 let tokenCliente = null;
 (function lerTokenCliente() {
@@ -71,8 +76,6 @@ let tokenCliente = null;
     const tokenDoLink = parametros.get("c");
     if (tokenDoLink) {
       localStorage.setItem("contaclick_token", tokenDoLink);
-      const urlLimpo = window.location.pathname + window.location.hash;
-      window.history.replaceState(null, "", urlLimpo);
     }
     tokenCliente = localStorage.getItem("contaclick_token");
   } catch (e) {
