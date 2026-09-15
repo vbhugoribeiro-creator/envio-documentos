@@ -543,17 +543,25 @@ function renderizarLote() {
 
     const imgWrap = document.createElement("div");
     imgWrap.className = "cartao-lote-img";
-    const img = document.createElement("img");
-    img.src = URL.createObjectURL(doc.fotoDocBlob);
-    img.alt = t("doc_item", { n: indice + 1 });
-    imgWrap.appendChild(img);
+    if (doc.ficheiroPronto) {
+      imgWrap.classList.add("pdf");
+      imgWrap.textContent = "PDF";
+    } else {
+      const img = document.createElement("img");
+      img.src = URL.createObjectURL(doc.fotoDocBlob);
+      img.alt = t("doc_item", { n: indice + 1 });
+      imgWrap.appendChild(img);
+    }
 
     const info = document.createElement("div");
     info.className = "cartao-lote-info";
     const nome = document.createElement("span");
     nome.textContent = t("doc_item", { n: indice + 1 });
     const badge = document.createElement("span");
-    if (!doc.temQr) {
+    if (doc.ficheiroPronto) {
+      badge.className = "badge-qr sem";
+      badge.textContent = t("badge_ficheiro");
+    } else if (!doc.temQr) {
       badge.className = "badge-qr sem";
       badge.textContent = t("badge_sem_qr");
     } else if (doc.qrDetetadoNaFoto) {
@@ -588,6 +596,7 @@ function renderizarLote() {
 // QR), que é um bom substituto do tamanho do PDF gerado (a conversão não
 // muda muito o tamanho total, é a mesma imagem só reembrulhada).
 function tamanhoEstimadoDocumento(doc) {
+  if (doc.ficheiroPronto) return doc.ficheiroPronto.size;
   return (doc.fotoDocBlob ? doc.fotoDocBlob.size : 0) + (doc.fotoQrBlob ? doc.fotoQrBlob.size : 0);
 }
 
@@ -695,6 +704,10 @@ async function enviarLote() {
   try {
     ficheiros = await Promise.all(
       documentos.map(async (doc, indice) => {
+        // Um PDF já escolhido pelo cliente ("Já tenho o ficheiro") vai
+        // direto, sem reconstrução nenhuma -- só uma foto (capturada ou
+        // escolhida da galeria) precisa de ser embrulhada num PDF.
+        if (doc.ficheiroPronto) return doc.ficheiroPronto;
         const pdfBlob = await construirPdfDocumento(doc.fotoDocBlob, doc.fotoQrBlob);
         const sufixo = documentos.length > 1 ? `_${indice + 1}` : "";
         return new File([pdfBlob], `${t("nome_ficheiro")}_${hoje}${sufixo}.pdf`, { type: "application/pdf" });
@@ -783,6 +796,40 @@ function iniciarNovoDocumento(comQr) {
 
 document.getElementById("btn-iniciar-com-qr").addEventListener("click", () => iniciarNovoDocumento(true));
 document.getElementById("btn-iniciar-sem-qr").addEventListener("click", () => iniciarNovoDocumento(false));
+
+// ---------------------------------------------------------------------
+// "Já tenho o ficheiro" -- o cliente pode escolher um PDF ou foto já
+// existente no telemóvel (ex: anexo de email, foto tirada antes de abrir
+// a app), em vez de ser obrigado a fotografar na hora com a câmara ao
+// vivo. Sem o atributo "capture", o seletor nativo do telemóvel mostra
+// Câmara + Galeria + Ficheiros/iCloud, dando escolha real ao cliente.
+// Um PDF escolhido vai direto para o lote, sem passar por
+// construirPdfDocumento() (já está pronto); uma foto tem o mesmo
+// tratamento que o fluxo "Sem código QR" (1 imagem, 1 página) -- o QR,
+// se existir, continua a ser lido pelo escritório a partir do PDF final,
+// mesmo sem confirmação aqui do lado do cliente. Pedido explícito do
+// utilizador, 2026-09-15: "e se a foto já existir ou o cliente já tiver
+// o pdf no telemóvel?"
+// ---------------------------------------------------------------------
+document.getElementById("btn-iniciar-ficheiro").addEventListener("click", () => {
+  document.getElementById("input-ficheiro").click();
+});
+
+document.getElementById("input-ficheiro").addEventListener("change", (evento) => {
+  const ficheirosEscolhidos = Array.from(evento.target.files || []);
+  evento.target.value = ""; // permite escolher o mesmo ficheiro outra vez mais tarde
+  if (ficheirosEscolhidos.length === 0) return;
+  for (const ficheiro of ficheirosEscolhidos) {
+    const ehPdf = ficheiro.type === "application/pdf" || ficheiro.name.toLowerCase().endsWith(".pdf");
+    if (ehPdf) {
+      documentos.push({ ficheiroPronto: ficheiro, temQr: null, fotoQrBlob: null, fotoDocBlob: null, qrDetetadoNaFoto: false });
+    } else {
+      documentos.push({ ficheiroPronto: null, temQr: false, fotoQrBlob: null, fotoDocBlob: ficheiro, qrDetetadoNaFoto: false });
+    }
+  }
+  renderizarLote();
+  mostrarTela("lote");
+});
 
 // O texto do ecrã inicial muda consoante já haja (ou não) documentos no
 // lote à espera -- ver mostrarTela().
