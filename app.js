@@ -798,26 +798,31 @@ document.getElementById("btn-iniciar-com-qr").addEventListener("click", () => in
 document.getElementById("btn-iniciar-sem-qr").addEventListener("click", () => iniciarNovoDocumento(false));
 
 // ---------------------------------------------------------------------
-// "Já tenho o ficheiro" -- o cliente pode escolher um PDF ou foto já
-// existente no telemóvel (ex: anexo de email, foto tirada antes de abrir
-// a app), em vez de ser obrigado a fotografar na hora com a câmara ao
-// vivo. Sem o atributo "capture", o seletor nativo do telemóvel mostra
-// Câmara + Galeria + Ficheiros/iCloud, dando escolha real ao cliente.
+// "PDF já guardado" / "Foto da galeria" -- o cliente pode escolher um
+// ficheiro já existente no telemóvel (ex: anexo de email, foto tirada
+// antes de abrir a app), em vez de ser obrigado a fotografar na hora com
+// a câmara ao vivo. Pedido explícito do utilizador, 2026-09-15: "e se a
+// foto já existir ou o cliente já tiver o pdf no telemóvel?"
+//
+// DOIS botões/inputs separados, com "accept" diferente, de propósito
+// (2026-09-15, correção depois do 1º teste real): um único input com
+// accept="application/pdf,image/*" continua a mostrar a opção de Câmara
+// no seletor nativo do Android sempre que o accept inclui imagens --
+// não há forma de esconder isso a partir da app. Um input só com
+// accept="application/pdf" NUNCA mostra Câmara (não é um tipo que a
+// câmara produza), vai direto a Ficheiros -- resolve por completo o
+// caso do PDF. Para a foto já temos "Sem código QR" para fotografar na
+// hora; este botão é só para quando a foto já existe na galeria -- a
+// Câmara pode continuar a aparecer aí como atalho do próprio sistema,
+// mas o cliente escolhe a Galeria/Fotos à mesma.
+//
 // Um PDF escolhido vai direto para o lote, sem passar por
 // construirPdfDocumento() (já está pronto); uma foto tem o mesmo
 // tratamento que o fluxo "Sem código QR" (1 imagem, 1 página) -- o QR,
 // se existir, continua a ser lido pelo escritório a partir do PDF final,
-// mesmo sem confirmação aqui do lado do cliente. Pedido explícito do
-// utilizador, 2026-09-15: "e se a foto já existir ou o cliente já tiver
-// o pdf no telemóvel?"
+// mesmo sem confirmação aqui do lado do cliente.
 // ---------------------------------------------------------------------
-document.getElementById("btn-iniciar-ficheiro").addEventListener("click", () => {
-  document.getElementById("input-ficheiro").click();
-});
-
-document.getElementById("input-ficheiro").addEventListener("change", (evento) => {
-  const ficheirosEscolhidos = Array.from(evento.target.files || []);
-  evento.target.value = ""; // permite escolher o mesmo ficheiro outra vez mais tarde
+function processarFicheirosEscolhidos(ficheirosEscolhidos) {
   if (ficheirosEscolhidos.length === 0) return;
   for (const ficheiro of ficheirosEscolhidos) {
     const ehPdf = ficheiro.type === "application/pdf" || ficheiro.name.toLowerCase().endsWith(".pdf");
@@ -829,7 +834,22 @@ document.getElementById("input-ficheiro").addEventListener("change", (evento) =>
   }
   renderizarLote();
   mostrarTela("lote");
+}
+
+document.getElementById("btn-iniciar-pdf").addEventListener("click", () => {
+  document.getElementById("input-pdf").click();
 });
+document.getElementById("btn-iniciar-galeria").addEventListener("click", () => {
+  document.getElementById("input-galeria").click();
+});
+
+for (const idInput of ["input-pdf", "input-galeria"]) {
+  document.getElementById(idInput).addEventListener("change", (evento) => {
+    const ficheirosEscolhidos = Array.from(evento.target.files || []);
+    evento.target.value = ""; // permite escolher o mesmo ficheiro outra vez mais tarde
+    processarFicheirosEscolhidos(ficheirosEscolhidos);
+  });
+}
 
 // O texto do ecrã inicial muda consoante já haja (ou não) documentos no
 // lote à espera -- ver mostrarTela().

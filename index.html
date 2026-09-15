@@ -415,9 +415,11 @@
     <div class="botoes-inicio">
       <button class="btn-principal btn-full" id="btn-iniciar-com-qr" data-i18n-html="btn_com_qr_html">Com código QR<small>2 fotos: QR + documento</small></button>
       <button class="btn-secundario btn-full" id="btn-iniciar-sem-qr" data-i18n-html="btn_sem_qr_html">Sem código QR<small>1 foto só do documento</small></button>
-      <button class="btn-secundario btn-full" id="btn-iniciar-ficheiro" data-i18n-html="btn_ficheiro_html">Já tenho o ficheiro<small>PDF ou foto já guardada no telemóvel</small></button>
+      <button class="btn-secundario btn-full" id="btn-iniciar-pdf" data-i18n-html="btn_pdf_html">📄 PDF já guardado<small>Recebido por email ou já no telemóvel</small></button>
+      <button class="btn-secundario btn-full" id="btn-iniciar-galeria" data-i18n-html="btn_galeria_html">🖼️ Foto da galeria<small>Uma foto já tirada antes</small></button>
     </div>
-    <input type="file" id="input-ficheiro" accept="application/pdf,image/*" multiple hidden>
+    <input type="file" id="input-pdf" accept="application/pdf" multiple hidden>
+    <input type="file" id="input-galeria" accept="image/*" multiple hidden>
     <button class="btn-instalar oculto" id="btn-instalar" data-i18n="btn_instalar">📌 Fixar app no ecrã principal</button>
     <p class="nota-instalar-ios oculto" id="nota-instalar-ios" data-i18n-html="nota_instalar_ios_html">Para fixares no ecrã principal: toca em <strong>Partilhar</strong> (⬆) e depois em <strong>"Adicionar ao Ecrã Principal"</strong>.</p>
     <button class="btn-instalar oculto" id="btn-ver-historico" data-i18n="btn_ver_historico">📋 Ver os meus envios</button>
