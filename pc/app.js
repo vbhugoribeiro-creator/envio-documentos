@@ -75,12 +75,24 @@ let tokenCliente = null;
     const parametros = new URLSearchParams(window.location.search);
     const tokenDoLink = parametros.get("c");
     if (tokenDoLink) {
-      localStorage.setItem("contaclick_token", tokenDoLink);
+      // Usa já o token do link diretamente em memória -- ver o comentário
+      // completo no app.js da versão telemóvel (bug real confirmado
+      // 2026-09-25: o token chegava certo no URL, mas era "esquecido" se
+      // o localStorage estivesse bloqueado/restrito, porque o código só
+      // o usava depois de o reler de lá).
+      tokenCliente = tokenDoLink;
+      try {
+        localStorage.setItem("contaclick_token", tokenDoLink);
+      } catch (e) {
+        /* localStorage bloqueado -- sem problema, tokenCliente já está
+           definido a partir do URL. */
+      }
+    } else {
+      tokenCliente = localStorage.getItem("contaclick_token");
     }
-    tokenCliente = localStorage.getItem("contaclick_token");
   } catch (e) {
-    /* localStorage pode estar bloqueado -- sem problema, fica sem token
-       nesta sessão. */
+    /* localStorage pode estar bloqueado -- sem token de uma visita
+       anterior nesta sessão. */
   }
 })();
 

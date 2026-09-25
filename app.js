@@ -78,7 +78,26 @@ let tokenCliente = null;
     const parametros = new URLSearchParams(window.location.search);
     const tokenDoLink = parametros.get("c");
     if (tokenDoLink) {
-      localStorage.setItem("contaclick_token", tokenDoLink);
+      // Usa já o token do link diretamente em memória -- NUNCA depende só
+      // de o conseguir ler de volta do localStorage (bug real confirmado
+      // 2026-09-25: cliente novo, primeiro envio de sempre, iPhone, o
+      // documento chegou sem identificação nenhuma, apesar do link ter o
+      // "?c=" certo). Causa: o link é muitas vezes aberto a partir de um
+      // mini-navegador embutido (Mail/Gmail/WhatsApp), que pode ter o
+      // localStorage bloqueado ou mais restrito do que o Safari a sério
+      // -- o token chegava perfeitamente bem no URL, mas o código só o
+      // "esquecia" a seguir, porque tentava sempre reler do
+      // armazenamento em vez de usar logo o que já tinha na mão. O
+      // localStorage continua a ser tentado, só para lembrar o token em
+      // visitas futuras -- nunca é o único sítio de onde a visita atual
+      // o vai buscar.
+      tokenCliente = tokenDoLink;
+      try {
+        localStorage.setItem("contaclick_token", tokenDoLink);
+      } catch (e) {
+        /* localStorage bloqueado -- sem problema, tokenCliente já está
+           definido a partir do URL, esta visita funciona à mesma. */
+      }
       // NÃO tirar o "?c=" da barra de endereço (correção 2026-09-15,
       // bug real confirmado com a Barbara Bento: o 1º envio dela, feito
       // a abrir o link do email diretamente, saiu identificado
@@ -96,11 +115,14 @@ let tokenCliente = null;
       // sempre visível no URL, o ícone fixado passa a incluir sempre o
       // token, em qualquer aparelho -- resolve na origem, não só por
       // localStorage.
+    } else {
+      tokenCliente = localStorage.getItem("contaclick_token");
     }
-    tokenCliente = localStorage.getItem("contaclick_token");
   } catch (e) {
-    /* localStorage pode estar bloqueado -- sem problema, fica sem token
-       nesta sessão, a app continua a funcionar na mesma. */
+    /* localStorage pode estar bloqueado -- sem token guardado de uma
+       visita anterior nesta sessão, a app continua a funcionar na
+       mesma (sem identidade confirmada, como sempre foi o caso sem
+       token nenhum). */
   }
 })();
 
