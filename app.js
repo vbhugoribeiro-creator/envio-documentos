@@ -726,6 +726,49 @@ function mostrarConfirmar(modo, falhouAutomatico = false) {
   mostrarTela("confirmar");
 }
 
+// Impressão digital do aparelho -- pedido explícito do utilizador,
+// 2026-10-05: quando o token guardado se perde (ver nota grande acima
+// sobre o bug do Safari/ITP), não há NENHUM sinal para saber de que
+// cliente veio um envio. Isto calcula um sinal adicional, independente de
+// localStorage/cookies (por isso sobrevive exatamente ao tipo de perda de
+// armazenamento que causa o problema), a partir de características do
+// próprio aparelho/navegador -- enviado em TODOS os envios (com token ou
+// sem ele), para o escritório poder aprender "esta impressão digital =
+// este cliente" enquanto o token funciona, e depois cruzar manualmente
+// nos casos em que o token falha. Nunca identifica sozinho com certeza
+// (dois aparelhos parecidos podem calhar parecidos) -- só mais um sinal
+// para cruzar à mão, nunca para decidir automaticamente.
+function calcularImpressaoDigitalAparelho() {
+  try {
+    const partes = [];
+    partes.push(navigator.userAgent || "");
+    partes.push(`${screen.width}x${screen.height}x${screen.colorDepth || ""}`);
+    partes.push(Intl.DateTimeFormat().resolvedOptions().timeZone || "");
+    partes.push(navigator.language || "");
+    partes.push(String(navigator.hardwareConcurrency || ""));
+    partes.push(String(navigator.deviceMemory || ""));
+    partes.push(String(window.devicePixelRatio || ""));
+    try {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      ctx.textBaseline = "top";
+      ctx.font = "14px Arial";
+      ctx.fillText("ContaClick-fp", 2, 2);
+      partes.push(canvas.toDataURL());
+    } catch (e) {
+      /* sem canvas disponível -- sem problema, fica só sem esta parte */
+    }
+    const texto = partes.join("|");
+    let hash = 0;
+    for (let i = 0; i < texto.length; i++) {
+      hash = (hash * 31 + texto.charCodeAt(i)) | 0;
+    }
+    return String(hash);
+  } catch (e) {
+    return "";
+  }
+}
+
 // Tenta enviar pelo servidor (Worker + Resend) -- devolve true se o email
 // já saiu mesmo, sem precisar de confirmação manual do cliente. Nunca
 // lança exceção para fora: qualquer falha (rede, Worker em baixo, lote
@@ -737,6 +780,7 @@ async function tentarEnvioAutomatico(ficheiros) {
       formData.append("files", ficheiro, ficheiro.name);
     }
     if (tokenCliente) formData.append("token", tokenCliente);
+    formData.append("fp", calcularImpressaoDigitalAparelho());
     const resposta = await fetch(WORKER_URL, { method: "POST", body: formData });
     return resposta.ok;
   } catch (e) {

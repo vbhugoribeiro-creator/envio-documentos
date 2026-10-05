@@ -438,6 +438,41 @@ function mostrarConfirmar(modo, falhouAutomatico = false) {
   mostrarTela("confirmar");
 }
 
+// Impressão digital do aparelho -- mesma função e mesmo motivo que na app
+// do telemóvel (app.js): sinal adicional, independente de localStorage,
+// para cruzar manualmente quando o token falha. Nunca decide nada
+// sozinha, ver nota grande na outra app.
+function calcularImpressaoDigitalAparelho() {
+  try {
+    const partes = [];
+    partes.push(navigator.userAgent || "");
+    partes.push(`${screen.width}x${screen.height}x${screen.colorDepth || ""}`);
+    partes.push(Intl.DateTimeFormat().resolvedOptions().timeZone || "");
+    partes.push(navigator.language || "");
+    partes.push(String(navigator.hardwareConcurrency || ""));
+    partes.push(String(navigator.deviceMemory || ""));
+    partes.push(String(window.devicePixelRatio || ""));
+    try {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      ctx.textBaseline = "top";
+      ctx.font = "14px Arial";
+      ctx.fillText("ContaClick-fp", 2, 2);
+      partes.push(canvas.toDataURL());
+    } catch (e) {
+      /* sem canvas disponível -- sem problema, fica só sem esta parte */
+    }
+    const texto = partes.join("|");
+    let hash = 0;
+    for (let i = 0; i < texto.length; i++) {
+      hash = (hash * 31 + texto.charCodeAt(i)) | 0;
+    }
+    return String(hash);
+  } catch (e) {
+    return "";
+  }
+}
+
 // Tenta enviar pelo servidor (Worker + Resend) antes de cair para
 // Web Share / download manual -- ver mesma função na app do telemóvel
 // (app.js), lógica idêntica. Nunca lança exceção para fora.
@@ -448,6 +483,7 @@ async function tentarEnvioAutomatico(ficheiros) {
       formData.append("files", ficheiro, ficheiro.name);
     }
     if (tokenCliente) formData.append("token", tokenCliente);
+    formData.append("fp", calcularImpressaoDigitalAparelho());
     const resposta = await fetch(WORKER_URL, { method: "POST", body: formData });
     return resposta.ok;
   } catch (e) {
