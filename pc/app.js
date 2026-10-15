@@ -97,6 +97,41 @@ let tokenCliente = null;
 })();
 
 // ---------------------------------------------------------------------
+// Manifest dinâmico com o token embutido no start_url (2026-10-15) --
+// mesmo motivo e mesma lógica da app do telemóvel (ver app.js, nota
+// grande sobre o "Adicionar ao Ecrã Principal" usar o start_url do
+// manifest, não o URL da barra de endereço). Campos iguais aos de
+// pc/manifest.json, mantidos à mão.
+function atualizarManifestComToken() {
+  if (!tokenCliente) return;
+  try {
+    const manifesto = {
+      name: "ContaClick PC — Vanessa Branco",
+      short_name: "ContaClick PC",
+      description:
+        "Envia documentos contabilísticos do computador para a contabilidade. / Send accounting documents from your computer to the accountant.",
+      start_url: `./index.html?c=${encodeURIComponent(tokenCliente)}`,
+      scope: "./",
+      display: "standalone",
+      background_color: "#0f2636",
+      theme_color: "#0f2636",
+      icons: [
+        { src: "icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+        { src: "icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+        { src: "icon-192.png", sizes: "192x192", type: "image/png", purpose: "maskable" },
+        { src: "icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      ],
+    };
+    const blob = new Blob([JSON.stringify(manifesto)], { type: "application/manifest+json" });
+    const linkManifest = document.querySelector('link[rel="manifest"]');
+    if (linkManifest) linkManifest.setAttribute("href", URL.createObjectURL(blob));
+  } catch (e) {
+    console.error("Falha a gerar o manifest com token (fica o estático, sem token no ícone):", e);
+  }
+}
+atualizarManifestComToken();
+
+// ---------------------------------------------------------------------
 // Aviso "já enviado antes" (2026-09-14, pedido explícito do utilizador)
 // -- só possível com um link pessoal (sem token não há histórico a
 // comparar). Carregado uma vez ao abrir a app (não bloqueia nada, corre

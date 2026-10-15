@@ -115,6 +115,21 @@ let tokenCliente = null;
       // sempre visível no URL, o ícone fixado passa a incluir sempre o
       // token, em qualquer aparelho -- resolve na origem, não só por
       // localStorage.
+      //
+      // CORREÇÃO 2026-10-15 -- esta nota estava incompleta: manter o
+      // "?c=" na barra só ajuda se o "Adicionar ao Ecrã Principal" for
+      // tratado como marcador normal (bookmark). Quando o Safari
+      // reconhece a página como uma PWA instalável (há manifest.json +
+      // service worker, como aqui), o "Adicionar ao Ecrã Principal" usa
+      // o `start_url` do PRÓPRIO manifest para o ícone -- NUNCA o URL
+      // que estava na barra nesse momento. O `manifest.json` estático
+      // nunca incluiu `?c=TOKEN` nenhum (não há como, é o mesmo
+      // ficheiro para todos os clientes) -- ou seja, um ícone instalado
+      // por este caminho ficava sem token desde o primeiro instante,
+      // não só depois de o armazenamento ser limpo. Ver
+      // atualizarManifestComToken() abaixo: troca o manifest por um
+      // gerado na hora, com o token já metido no start_url, antes do
+      // cliente chegar a tocar em "instalar".
     } else {
       tokenCliente = localStorage.getItem("contaclick_token");
     }
@@ -125,6 +140,50 @@ let tokenCliente = null;
        token nenhum). */
   }
 })();
+
+// ---------------------------------------------------------------------
+// Manifest dinâmico com o token embutido no start_url (2026-10-15) --
+// ver nota grande acima: o manifest.json estático nunca podia incluir
+// um token (é o mesmo ficheiro para todos os clientes), e o iOS usa o
+// start_url DO MANIFEST para o ícone instalado, não o URL da barra de
+// endereço. Sem isto, qualquer ícone novo instalado por um cliente com
+// link pessoal nascia sem token, de forma permanente -- não era só o
+// armazenamento a perder-se mais tarde.
+//
+// Construído em JS (não um `fetch(manifest.json)`, para não depender de
+// uma chamada assíncrona que podia não terminar antes do cliente tocar
+// em "instalar") -- os campos têm de ser mantidos iguais aos do
+// manifest.json estático à mão (mesma disciplina de duplicação já usada
+// para calcularImpressaoDigitalAparelho(), ver nota lá).
+function atualizarManifestComToken() {
+  if (!tokenCliente) return; // sem token, o manifest estático já serve bem
+  try {
+    const manifesto = {
+      name: "ContaClick — Vanessa Branco",
+      short_name: "ContaClick",
+      description:
+        "Fotografa e envia documentos contabilísticos, com verificação automática de código QR. / Photograph and send accounting documents, with automatic QR-code checking.",
+      start_url: `./index.html?c=${encodeURIComponent(tokenCliente)}`,
+      scope: "./",
+      display: "standalone",
+      orientation: "portrait",
+      background_color: "#0f2636",
+      theme_color: "#0f2636",
+      icons: [
+        { src: "icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+        { src: "icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+        { src: "icon-192.png", sizes: "192x192", type: "image/png", purpose: "maskable" },
+        { src: "icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      ],
+    };
+    const blob = new Blob([JSON.stringify(manifesto)], { type: "application/manifest+json" });
+    const linkManifest = document.querySelector('link[rel="manifest"]');
+    if (linkManifest) linkManifest.setAttribute("href", URL.createObjectURL(blob));
+  } catch (e) {
+    console.error("Falha a gerar o manifest com token (fica o estático, sem token no ícone):", e);
+  }
+}
+atualizarManifestComToken();
 
 // ---------------------------------------------------------------------
 // Nomes já usados em envios anteriores (2026-09-15) -- os PDFs gerados a
