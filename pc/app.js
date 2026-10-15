@@ -190,6 +190,9 @@ async function carregarParCliente() {
     const resposta = await fetch(`${WORKER_BASE_URL}/info-token?token=${encodeURIComponent(tokenCliente)}`);
     const dados = await resposta.json();
     parCliente = dados.par || null;
+    // Pré-seleciona a empresa a que o link usado já pertencia -- ver
+    // nota completa na app do telemóvel (app.js).
+    if (parCliente && dados.sugestao) empresaEscolhida = dados.sugestao;
     renderizarBotoesParCliente();
     if (telas.lote.classList.contains("ativa")) blocoParCliente.classList.toggle("oculto", !parCliente);
   } catch (e) {

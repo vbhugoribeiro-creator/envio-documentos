@@ -237,6 +237,11 @@ async function carregarParCliente() {
     const resposta = await fetch(`${WORKER_BASE_URL}/info-token?token=${encodeURIComponent(tokenCliente)}`);
     const dados = await resposta.json();
     parCliente = dados.par || null;
+    // Pré-seleciona a empresa a que o link usado já pertencia -- pedido
+    // explícito do utilizador, 2026-10-15, para reaproveitar os links
+    // que já existem em vez de dar um link novo a cada pessoa. A
+    // pergunta continua a aparecer sempre, só já vem preenchida.
+    if (parCliente && dados.sugestao) empresaEscolhida = dados.sugestao;
     renderizarBotoesParCliente();
     if (telas.lote.classList.contains("ativa")) blocoParCliente.classList.toggle("oculto", !parCliente);
   } catch (e) {
