@@ -888,6 +888,36 @@ btnVerHistorico.addEventListener("click", async () => {
       const item = document.createElement("div");
       item.className = "item-historico";
 
+      // Apagar da lista -- mesma lógica da app do telemóvel (ver app.js).
+      const cabecalho = document.createElement("div");
+      cabecalho.className = "cabecalho-item-historico";
+      const btnApagar = document.createElement("button");
+      btnApagar.className = "btn-apagar-historico";
+      btnApagar.setAttribute("aria-label", t("historico_apagar"));
+      btnApagar.textContent = "🗑";
+      btnApagar.addEventListener("click", async () => {
+        if (!confirm(t("historico_confirmar_apagar"))) return;
+        btnApagar.disabled = true;
+        try {
+          const resposta = await fetch(`${WORKER_BASE_URL}/apagar-envio`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: tokenCliente, id: envio.id }),
+          });
+          if (resposta.ok) {
+            item.remove();
+            if (!listaHistorico.children.length) historicoVazio.classList.remove("oculto");
+          } else {
+            btnApagar.disabled = false;
+          }
+        } catch (e) {
+          console.error("Falha a apagar envio do histórico:", e);
+          btnApagar.disabled = false;
+        }
+      });
+      cabecalho.appendChild(btnApagar);
+      item.appendChild(cabecalho);
+
       const lista = document.createElement("div");
       lista.className = "lista-ficheiros";
       envio.ficheiros.forEach((nome) => {

@@ -28,6 +28,8 @@ const TRADUCOES = {
     historico_vazio: "Ainda não enviaste nenhum ficheiro por este link.",
     historico_item_meta: "{tamanho} · {data}",
     historico_toque_ampliar: "Toca para ampliar",
+    historico_apagar: "Apagar este envio da lista",
+    historico_confirmar_apagar: "Apagar este envio da tua lista? Isto não apaga o que já foi enviado para a contabilidade, só deixa de aparecer aqui.",
     btn_voltar: "« Voltar",
 
     // --- Lote ---
@@ -111,6 +113,8 @@ const TRADUCOES = {
     historico_vazio: "You haven't sent any files through this link yet.",
     historico_item_meta: "{tamanho} · {data}",
     historico_toque_ampliar: "Tap to zoom",
+    historico_apagar: "Remove this submission from the list",
+    historico_confirmar_apagar: "Remove this submission from your list? This doesn't delete what was already sent to the office, it just stops showing here.",
     btn_voltar: "« Back",
 
     // --- Batch ---
