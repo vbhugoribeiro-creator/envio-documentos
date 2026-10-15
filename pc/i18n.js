@@ -27,6 +27,7 @@ const TRADUCOES = {
     historico_titulo: "Os teus envios",
     historico_vazio: "Ainda não enviaste nenhum ficheiro por este link.",
     historico_item_meta: "{tamanho} · {data}",
+    historico_toque_ampliar: "Toca para ampliar",
     btn_voltar: "« Voltar",
 
     // --- Lote ---
@@ -109,6 +110,7 @@ const TRADUCOES = {
     historico_titulo: "Your submissions",
     historico_vazio: "You haven't sent any files through this link yet.",
     historico_item_meta: "{tamanho} · {data}",
+    historico_toque_ampliar: "Tap to zoom",
     btn_voltar: "« Back",
 
     // --- Batch ---

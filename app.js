@@ -566,6 +566,94 @@ function carregarImagem(blob) {
   });
 }
 
+// ---------------------------------------------------------------------
+// Miniaturas por documento (2026-10-15, pedido explícito do utilizador:
+// mostrar a imagem do documento em "Ver os meus envios", pequena mas
+// suficiente para dar para ampliar e ler). Nunca o documento completo --
+// só uma prévia JPEG redimensionada, enviada ao lado do PDF/ficheiro
+// real. A resolução (900px no lado maior) é de propósito maior do que
+// um ícone de lista: dá para o cliente tocar e ver com algum detalhe,
+// sem se tornar pesado (um documento normal, sobretudo texto/talão,
+// comprime muito bem em JPEG a esta escala).
+// ---------------------------------------------------------------------
+const TAMANHO_MINIATURA_MAX = 900;
+const QUALIDADE_MINIATURA = 0.72;
+
+function redimensionarParaMiniatura(imagemOuCanvas, larguraNatural, alturaNatural) {
+  const escala = Math.min(1, TAMANHO_MINIATURA_MAX / Math.max(larguraNatural, alturaNatural));
+  const w = Math.max(1, Math.round(larguraNatural * escala));
+  const h = Math.max(1, Math.round(alturaNatural * escala));
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  canvas.getContext("2d").drawImage(imagemOuCanvas, 0, 0, w, h);
+  return canvas.toDataURL("image/jpeg", QUALIDADE_MINIATURA);
+}
+
+async function gerarMiniaturaDeImagem(blob) {
+  const img = await carregarImagem(blob);
+  return redimensionarParaMiniatura(img, img.naturalWidth, img.naturalHeight);
+}
+
+// pdf.js só é preciso para gerar a miniatura de um PDF escolhido
+// diretamente ("PDF já guardado") -- carregado só nesse caso, em vez de
+// em toda a visita, para não pesar o arranque da app com uma biblioteca
+// que a maioria dos envios (fotos) nunca usa. Versão fixa (não "latest")
+// por disciplina normal do projeto -- ver outras bibliotecas já usadas.
+const PDFJS_VERSAO = "3.11.174";
+const PDFJS_BASE_URL = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSAO}`;
+let promessaPdfJs = null;
+
+function carregarPdfJs() {
+  if (promessaPdfJs) return promessaPdfJs;
+  promessaPdfJs = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = `${PDFJS_BASE_URL}/pdf.min.js`;
+    script.onload = () => {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = `${PDFJS_BASE_URL}/pdf.worker.min.js`;
+      resolve(window.pdfjsLib);
+    };
+    script.onerror = () => reject(new Error("Falha a carregar pdf.js"));
+    document.head.appendChild(script);
+  });
+  return promessaPdfJs;
+}
+
+async function gerarMiniaturaDePdf(file) {
+  const pdfjsLib = await carregarPdfJs();
+  const dados = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: dados }).promise;
+  const pagina = await pdf.getPage(1);
+  const viewportBase = pagina.getViewport({ scale: 1 });
+  const escala = Math.min(2, TAMANHO_MINIATURA_MAX / Math.max(viewportBase.width, viewportBase.height));
+  const viewport = pagina.getViewport({ scale: escala });
+  const canvas = document.createElement("canvas");
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  await pagina.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
+  return canvas.toDataURL("image/jpeg", QUALIDADE_MINIATURA);
+}
+
+// Gera a miniatura de um documento do lote -- nunca lança exceção para
+// fora: uma miniatura é só uma conveniência extra, uma falha a gerá-la
+// (PDF corrompido, pdf.js indisponível, etc.) nunca deve impedir o envio
+// do documento em si. Devolve null nesse caso -- o histórico mostra só o
+// nome, como sempre mostrou antes desta funcionalidade existir.
+async function gerarMiniatura(doc) {
+  try {
+    if (doc.ficheiroPronto) {
+      return await gerarMiniaturaDePdf(doc.ficheiroPronto);
+    }
+    if (doc.fotoDocBlob) {
+      return await gerarMiniaturaDeImagem(doc.fotoDocBlob);
+    }
+    return null;
+  } catch (e) {
+    console.error("Falha a gerar miniatura (documento segue sem prévia):", e);
+    return null;
+  }
+}
+
 // blobQr é opcional -- null/undefined para um documento sem código QR
 // (1 página só). Pedido explícito do utilizador, 2026-09-09.
 async function construirPdfDocumento(blobDoc, blobQr) {
@@ -773,7 +861,7 @@ function calcularImpressaoDigitalAparelho() {
 // já saiu mesmo, sem precisar de confirmação manual do cliente. Nunca
 // lança exceção para fora: qualquer falha (rede, Worker em baixo, lote
 // grande demais) devolve false e enviarLote() cai para o fluxo antigo.
-async function tentarEnvioAutomatico(ficheiros) {
+async function tentarEnvioAutomatico(ficheiros, miniaturas) {
   try {
     const formData = new FormData();
     for (const ficheiro of ficheiros) {
@@ -781,6 +869,9 @@ async function tentarEnvioAutomatico(ficheiros) {
     }
     if (tokenCliente) formData.append("token", tokenCliente);
     formData.append("fp", calcularImpressaoDigitalAparelho());
+    if (miniaturas && Object.keys(miniaturas).length > 0) {
+      formData.append("miniaturas", JSON.stringify(miniaturas));
+    }
     const resposta = await fetch(WORKER_URL, { method: "POST", body: formData });
     return resposta.ok;
   } catch (e) {
@@ -852,8 +943,21 @@ async function enviarLote() {
     return;
   }
 
+  // Miniaturas (ver gerarMiniatura acima) -- geradas depois dos PDFs,
+  // mesma ordem/índice de "documentos" e "ficheiros", por isso o nome
+  // final (já resolvido acima, com sufixo de colisão se preciso) está
+  // sempre certo. Nunca bloqueia o envio: uma falha individual aqui só
+  // tira essa miniatura do mapa, nunca o documento do lote.
+  const miniaturas = {};
+  await Promise.all(
+    documentos.map(async (doc, indice) => {
+      const miniatura = await gerarMiniatura(doc);
+      if (miniatura) miniaturas[ficheiros[indice].name] = miniatura;
+    })
+  );
+
   btnPartilhar.textContent = t("a_enviar");
-  const enviouAutomaticamente = await tentarEnvioAutomatico(ficheiros);
+  const enviouAutomaticamente = await tentarEnvioAutomatico(ficheiros, miniaturas);
   btnPartilhar.textContent = textoOriginal;
   btnPartilhar.disabled = false;
 
@@ -1117,9 +1221,36 @@ btnVerHistorico.addEventListener("click", async () => {
     envios.forEach((envio) => {
       const item = document.createElement("div");
       item.className = "item-historico";
-      const nomes = document.createElement("div");
-      nomes.className = "nomes";
-      nomes.textContent = envio.ficheiros.join(", ");
+
+      const lista = document.createElement("div");
+      lista.className = "lista-ficheiros";
+      envio.ficheiros.forEach((nome) => {
+        const linha = document.createElement("div");
+        linha.className = "ficheiro-historico";
+        const miniatura = envio.miniaturas && envio.miniaturas[nome];
+        if (miniatura) {
+          const btn = document.createElement("button");
+          btn.className = "miniatura-wrap";
+          btn.setAttribute("aria-label", t("historico_toque_ampliar"));
+          const img = document.createElement("img");
+          img.src = miniatura;
+          img.alt = "";
+          btn.appendChild(img);
+          btn.addEventListener("click", () => abrirVisualizadorMiniatura(miniatura));
+          linha.appendChild(btn);
+        } else {
+          const semImagem = document.createElement("div");
+          semImagem.className = "miniatura-wrap sem-imagem";
+          semImagem.textContent = "PDF";
+          linha.appendChild(semImagem);
+        }
+        const nomeEl = document.createElement("span");
+        nomeEl.className = "nome-ficheiro";
+        nomeEl.textContent = nome;
+        linha.appendChild(nomeEl);
+        lista.appendChild(linha);
+      });
+
       const meta = document.createElement("div");
       meta.className = "meta";
       const data = new Date(envio.enviado_em).toLocaleString(idioma === "en" ? "en-GB" : "pt-PT");
@@ -1127,7 +1258,7 @@ btnVerHistorico.addEventListener("click", async () => {
         tamanho: formatarTamanhoHistorico(envio.tamanho_bytes),
         data,
       });
-      item.append(nomes, meta);
+      item.append(lista, meta);
       listaHistorico.appendChild(item);
     });
   } catch (e) {
@@ -1137,3 +1268,23 @@ btnVerHistorico.addEventListener("click", async () => {
 });
 
 btnHistoricoVoltar.addEventListener("click", () => mostrarTela("inicio"));
+
+// ---------------------------------------------------------------------
+// Visualizador de miniatura (zoom) -- ver nota no CSS (visualizador-
+// miniatura) sobre o zoom em si ser o pinch nativo do browser.
+// ---------------------------------------------------------------------
+const visualizadorMiniatura = document.getElementById("visualizador-miniatura");
+const imagemVisualizador = document.getElementById("imagem-visualizador");
+
+function abrirVisualizadorMiniatura(src) {
+  imagemVisualizador.src = src;
+  visualizadorMiniatura.classList.remove("oculto");
+}
+function fecharVisualizadorMiniatura() {
+  visualizadorMiniatura.classList.add("oculto");
+  imagemVisualizador.src = "";
+}
+document.getElementById("btn-fechar-visualizador").addEventListener("click", fecharVisualizadorMiniatura);
+visualizadorMiniatura.addEventListener("click", (e) => {
+  if (e.target === visualizadorMiniatura) fecharVisualizadorMiniatura();
+});

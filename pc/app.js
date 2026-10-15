@@ -476,7 +476,7 @@ function calcularImpressaoDigitalAparelho() {
 // Tenta enviar pelo servidor (Worker + Resend) antes de cair para
 // Web Share / download manual -- ver mesma função na app do telemóvel
 // (app.js), lógica idêntica. Nunca lança exceção para fora.
-async function tentarEnvioAutomatico(ficheiros) {
+async function tentarEnvioAutomatico(ficheiros, miniaturas) {
   try {
     const formData = new FormData();
     for (const ficheiro of ficheiros) {
@@ -484,6 +484,9 @@ async function tentarEnvioAutomatico(ficheiros) {
     }
     if (tokenCliente) formData.append("token", tokenCliente);
     formData.append("fp", calcularImpressaoDigitalAparelho());
+    if (miniaturas && Object.keys(miniaturas).length > 0) {
+      formData.append("miniaturas", JSON.stringify(miniaturas));
+    }
     const resposta = await fetch(WORKER_URL, { method: "POST", body: formData });
     return resposta.ok;
   } catch (e) {
@@ -511,6 +514,86 @@ function carregarImagem(blob) {
     img.onerror = reject;
     img.src = URL.createObjectURL(blob);
   });
+}
+
+// ---------------------------------------------------------------------
+// Miniaturas por documento (2026-10-15) -- mesma lógica e mesmo motivo
+// da app do telemóvel (ver app.js): uma prévia JPEG pequena mas com
+// resolução suficiente para ampliar e ler, mostrada em "Ver os meus
+// envios". Só gerada quando o lote NÃO vai comprimido num .zip -- com
+// zip marcado, o Worker só vê 1 ficheiro final (o próprio .zip),
+// perde-se a correspondência 1-para-1 com os documentos originais (o
+// histórico já perde essa granularidade hoje, com ou sem miniaturas).
+// ---------------------------------------------------------------------
+const TAMANHO_MINIATURA_MAX = 900;
+const QUALIDADE_MINIATURA = 0.72;
+
+function redimensionarParaMiniatura(imagemOuCanvas, larguraNatural, alturaNatural) {
+  const escala = Math.min(1, TAMANHO_MINIATURA_MAX / Math.max(larguraNatural, alturaNatural));
+  const w = Math.max(1, Math.round(larguraNatural * escala));
+  const h = Math.max(1, Math.round(alturaNatural * escala));
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  canvas.getContext("2d").drawImage(imagemOuCanvas, 0, 0, w, h);
+  return canvas.toDataURL("image/jpeg", QUALIDADE_MINIATURA);
+}
+
+async function gerarMiniaturaDeImagem(blob) {
+  const img = await carregarImagem(blob);
+  return redimensionarParaMiniatura(img, img.naturalWidth, img.naturalHeight);
+}
+
+// pdf.js só é preciso para PDFs já prontos (a maioria dos ficheiros
+// nesta versão PC) -- carregado uma vez, em diferido, mesma versão
+// fixa da app do telemóvel.
+const PDFJS_VERSAO = "3.11.174";
+const PDFJS_BASE_URL = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSAO}`;
+let promessaPdfJs = null;
+
+function carregarPdfJs() {
+  if (promessaPdfJs) return promessaPdfJs;
+  promessaPdfJs = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = `${PDFJS_BASE_URL}/pdf.min.js`;
+    script.onload = () => {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = `${PDFJS_BASE_URL}/pdf.worker.min.js`;
+      resolve(window.pdfjsLib);
+    };
+    script.onerror = () => reject(new Error("Falha a carregar pdf.js"));
+    document.head.appendChild(script);
+  });
+  return promessaPdfJs;
+}
+
+async function gerarMiniaturaDePdf(file) {
+  const pdfjsLib = await carregarPdfJs();
+  const dados = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: dados }).promise;
+  const pagina = await pdf.getPage(1);
+  const viewportBase = pagina.getViewport({ scale: 1 });
+  const escala = Math.min(2, TAMANHO_MINIATURA_MAX / Math.max(viewportBase.width, viewportBase.height));
+  const viewport = pagina.getViewport({ scale: escala });
+  const canvas = document.createElement("canvas");
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  await pagina.render({ canvasContext: canvas.getContext("2d"), viewport }).promise;
+  return canvas.toDataURL("image/jpeg", QUALIDADE_MINIATURA);
+}
+
+// doc = item de "documentos" (ANTES de prepararFicheiros() converter
+// imagem->PDF) -- "convertido" ainda é uma imagem normal nesta altura,
+// "pdf" já é um PDF. "outro" (ex: HEIC não suportado pelo <canvas>)
+// fica sem miniatura -- nunca bloqueia o envio, ver gerarMiniatura().
+async function gerarMiniatura(doc) {
+  try {
+    if (doc.tipo === "pdf") return await gerarMiniaturaDePdf(doc.file);
+    if (doc.tipo === "convertido") return await gerarMiniaturaDeImagem(doc.file);
+    return null;
+  } catch (e) {
+    console.error("Falha a gerar miniatura (documento segue sem prévia):", e);
+    return null;
+  }
 }
 
 async function imagemParaPdf(file) {
@@ -593,10 +676,28 @@ async function enviar() {
   btnEnviar.textContent = t("a_preparar");
   btnEnviar.disabled = true;
 
+  let miniaturas = {};
   try {
     ficheirosPreparados = await prepararFicheiros();
+    // Miniaturas geradas AQUI, antes de zipar -- "documentos" e
+    // "ficheirosPreparados" estão na mesma ordem (prepararFicheiros() usa
+    // Promise.all sobre documentos.map, preserva o índice), por isso o
+    // nome final (já resolvido, com sufixo de colisão se preciso) está
+    // sempre certo. Com ".zip" marcado, ficheirosPreparados vai já a
+    // seguir reduzir-se a 1 único ficheiro -- sem correspondência
+    // 1-para-1 nenhuma, por isso não vale a pena gerar nada (mesma
+    // limitação que o histórico já tinha antes desta funcionalidade).
+    if (!chkZip.checked) {
+      await Promise.all(
+        documentos.map(async (doc, indice) => {
+          const miniatura = await gerarMiniatura(doc);
+          if (miniatura) miniaturas[ficheirosPreparados[indice].name] = miniatura;
+        })
+      );
+    }
     if (chkZip.checked) {
       ficheirosPreparados = [await ficheirosParaZip(ficheirosPreparados, nomeZipComData())];
+      miniaturas = {};
     }
   } catch (e) {
     console.error("Erro a preparar os ficheiros:", e);
@@ -607,7 +708,7 @@ async function enviar() {
   }
 
   btnEnviar.textContent = t("a_enviar");
-  const enviouAutomaticamente = await tentarEnvioAutomatico(ficheirosPreparados);
+  const enviouAutomaticamente = await tentarEnvioAutomatico(ficheirosPreparados, miniaturas);
   btnEnviar.textContent = textoOriginal;
   btnEnviar.disabled = false;
 
@@ -786,9 +887,36 @@ btnVerHistorico.addEventListener("click", async () => {
     envios.forEach((envio) => {
       const item = document.createElement("div");
       item.className = "item-historico";
-      const nomes = document.createElement("div");
-      nomes.className = "nomes";
-      nomes.textContent = envio.ficheiros.join(", ");
+
+      const lista = document.createElement("div");
+      lista.className = "lista-ficheiros";
+      envio.ficheiros.forEach((nome) => {
+        const linha = document.createElement("div");
+        linha.className = "ficheiro-historico";
+        const miniatura = envio.miniaturas && envio.miniaturas[nome];
+        if (miniatura) {
+          const btn = document.createElement("button");
+          btn.className = "miniatura-wrap";
+          btn.setAttribute("aria-label", t("historico_toque_ampliar"));
+          const img = document.createElement("img");
+          img.src = miniatura;
+          img.alt = "";
+          btn.appendChild(img);
+          btn.addEventListener("click", () => abrirVisualizadorMiniatura(miniatura));
+          linha.appendChild(btn);
+        } else {
+          const semImagem = document.createElement("div");
+          semImagem.className = "miniatura-wrap sem-imagem";
+          semImagem.textContent = "📎";
+          linha.appendChild(semImagem);
+        }
+        const nomeEl = document.createElement("span");
+        nomeEl.className = "nome-ficheiro";
+        nomeEl.textContent = nome;
+        linha.appendChild(nomeEl);
+        lista.appendChild(linha);
+      });
+
       const meta = document.createElement("div");
       meta.className = "meta";
       const data = new Date(envio.enviado_em).toLocaleString(idioma === "en" ? "en-GB" : "pt-PT");
@@ -796,7 +924,7 @@ btnVerHistorico.addEventListener("click", async () => {
         tamanho: formatarTamanho(envio.tamanho_bytes),
         data,
       });
-      item.append(nomes, meta);
+      item.append(lista, meta);
       listaHistorico.appendChild(item);
     });
   } catch (e) {
@@ -806,3 +934,22 @@ btnVerHistorico.addEventListener("click", async () => {
 });
 
 btnHistoricoVoltar.addEventListener("click", () => mostrarTela("inicio"));
+
+// ---------------------------------------------------------------------
+// Visualizador de miniatura (zoom) -- mesma ideia da app do telemóvel.
+// ---------------------------------------------------------------------
+const visualizadorMiniatura = document.getElementById("visualizador-miniatura");
+const imagemVisualizador = document.getElementById("imagem-visualizador");
+
+function abrirVisualizadorMiniatura(src) {
+  imagemVisualizador.src = src;
+  visualizadorMiniatura.classList.remove("oculto");
+}
+function fecharVisualizadorMiniatura() {
+  visualizadorMiniatura.classList.add("oculto");
+  imagemVisualizador.src = "";
+}
+document.getElementById("btn-fechar-visualizador").addEventListener("click", fecharVisualizadorMiniatura);
+visualizadorMiniatura.addEventListener("click", (e) => {
+  if (e.target === visualizadorMiniatura) fecharVisualizadorMiniatura();
+});

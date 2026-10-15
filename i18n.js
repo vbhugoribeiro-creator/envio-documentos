@@ -37,6 +37,7 @@ const TRADUCOES = {
     historico_titulo: "Os teus envios",
     historico_vazio: "Ainda não enviaste nenhum documento por este link.",
     historico_item_meta: "{tamanho} · {data}",
+    historico_toque_ampliar: "Toca para ampliar",
     btn_voltar: "« Voltar",
     nota_instalar_ios_html:
       "Para fixares no ecrã principal: toca em <strong>Partilhar</strong> (⬆) e depois em <strong>\"Adicionar ao Ecrã Principal\"</strong>.",
@@ -148,6 +149,7 @@ const TRADUCOES = {
     historico_titulo: "Your submissions",
     historico_vazio: "You haven't sent any documents through this link yet.",
     historico_item_meta: "{tamanho} · {data}",
+    historico_toque_ampliar: "Tap to zoom",
     btn_voltar: "« Back",
     nota_instalar_ios_html:
       "To add it to your home screen: tap <strong>Share</strong> (⬆) then <strong>\"Add to Home Screen\"</strong>.",
