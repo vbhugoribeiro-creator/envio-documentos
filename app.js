@@ -218,6 +218,50 @@ async function carregarNomesJaEnviados() {
 }
 carregarNomesJaEnviados();
 
+// ---------------------------------------------------------------------
+// Link PARTILHADO entre 2 empresas (2026-10-15, plano B para quem
+// partilha aparelho/pessoa -- ver /info-token em contaclick-worker).
+// Carregado uma vez ao abrir a app; quando `parCliente` fica preenchido,
+// o ecrã do lote passa a exigir a escolha antes de deixar enviar (ver
+// renderizarLote(), enviarLote()). Nunca depende de localStorage para a
+// escolha em si -- é feita de novo a cada visita/envio.
+// ---------------------------------------------------------------------
+let parCliente = null; // null, ou [{valor, rotulo}, {valor, rotulo}]
+let empresaEscolhida = null;
+const blocoParCliente = document.getElementById("bloco-par-cliente");
+const botoesParCliente = document.getElementById("botoes-par-cliente");
+
+async function carregarParCliente() {
+  if (!tokenCliente) return;
+  try {
+    const resposta = await fetch(`${WORKER_BASE_URL}/info-token?token=${encodeURIComponent(tokenCliente)}`);
+    const dados = await resposta.json();
+    parCliente = dados.par || null;
+    renderizarBotoesParCliente();
+    if (telas.lote.classList.contains("ativa")) blocoParCliente.classList.toggle("oculto", !parCliente);
+  } catch (e) {
+    console.error("Falha a carregar info do token (fica sem o passo de escolha de empresa):", e);
+  }
+}
+carregarParCliente();
+
+function renderizarBotoesParCliente() {
+  botoesParCliente.innerHTML = "";
+  if (!parCliente) return;
+  parCliente.forEach((opcao) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn-opcao-par";
+    btn.textContent = opcao.rotulo;
+    btn.classList.toggle("selecionado", empresaEscolhida === opcao.valor);
+    btn.addEventListener("click", () => {
+      empresaEscolhida = opcao.valor;
+      renderizarBotoesParCliente();
+    });
+    botoesParCliente.appendChild(btn);
+  });
+}
+
 // t("chave") ou t("chave", { n: 3 }) para os {marcadores} do texto.
 function t(chave, params) {
   const tabela = TRADUCOES[idioma] || TRADUCOES.pt;
@@ -804,6 +848,7 @@ function renderizarLote() {
     cartao.append(imgWrap, info, btnRemover);
     listaLote.appendChild(cartao);
   });
+  blocoParCliente.classList.toggle("oculto", !parCliente);
   atualizarMedidorTamanho();
 }
 
@@ -927,6 +972,7 @@ async function tentarEnvioAutomatico(ficheiros, miniaturas) {
       formData.append("files", ficheiro, ficheiro.name);
     }
     if (tokenCliente) formData.append("token", tokenCliente);
+    if (parCliente && empresaEscolhida) formData.append("empresa_escolhida", empresaEscolhida);
     formData.append("fp", calcularImpressaoDigitalAparelho());
     if (miniaturas && Object.keys(miniaturas).length > 0) {
       formData.append("miniaturas", JSON.stringify(miniaturas));
@@ -957,6 +1003,10 @@ const btnPartilhar = document.getElementById("btn-partilhar");
 async function enviarLote() {
   if (documentos.length === 0) return;
   if (atualizarMedidorTamanho()) return; // lote grande demais -- botão já ficou desativado, defesa extra
+  if (parCliente && !empresaEscolhida) {
+    alert(t("par_cliente_obrigatorio"));
+    return;
+  }
   const textoOriginal = btnPartilhar.textContent;
   btnPartilhar.textContent = t("preparar");
   btnPartilhar.disabled = true;
@@ -1022,6 +1072,7 @@ async function enviarLote() {
 
   if (enviouAutomaticamente) {
     documentos = [];
+    empresaEscolhida = null; // próximo lote volta a pedir a escolha, nunca assume a anterior
     mostrarTela("concluido");
     // Atualiza a lista de nomes conhecidos com o que acabou de sair --
     // sem isto, um 2º lote enviado ainda na mesma visita só ficava

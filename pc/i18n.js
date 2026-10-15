@@ -30,6 +30,8 @@ const TRADUCOES = {
     historico_toque_ampliar: "Toca para ampliar",
     historico_apagar: "Apagar este envio da lista",
     historico_confirmar_apagar: "Apagar este envio da tua lista? Isto não apaga o que já foi enviado para a contabilidade, só deixa de aparecer aqui.",
+    par_cliente_pergunta: "Para que empresa é este envio?",
+    par_cliente_obrigatorio: "Escolhe primeiro para que empresa é este envio.",
     btn_voltar: "« Voltar",
 
     // --- Lote ---
@@ -115,6 +117,8 @@ const TRADUCOES = {
     historico_toque_ampliar: "Tap to zoom",
     historico_apagar: "Remove this submission from the list",
     historico_confirmar_apagar: "Remove this submission from your list? This doesn't delete what was already sent to the office, it just stops showing here.",
+    par_cliente_pergunta: "Which company is this submission for?",
+    par_cliente_obrigatorio: "Choose which company this submission is for first.",
     btn_voltar: "« Back",
 
     // --- Batch ---

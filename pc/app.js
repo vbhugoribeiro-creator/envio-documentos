@@ -175,6 +175,46 @@ async function carregarHistoricoConhecido() {
 }
 carregarHistoricoConhecido();
 
+// ---------------------------------------------------------------------
+// Link PARTILHADO entre 2 empresas (2026-10-15) -- mesma lógica da app
+// do telemóvel (ver app.js, nota completa lá).
+// ---------------------------------------------------------------------
+let parCliente = null;
+let empresaEscolhida = null;
+const blocoParCliente = document.getElementById("bloco-par-cliente");
+const botoesParCliente = document.getElementById("botoes-par-cliente");
+
+async function carregarParCliente() {
+  if (!tokenCliente) return;
+  try {
+    const resposta = await fetch(`${WORKER_BASE_URL}/info-token?token=${encodeURIComponent(tokenCliente)}`);
+    const dados = await resposta.json();
+    parCliente = dados.par || null;
+    renderizarBotoesParCliente();
+    if (telas.lote.classList.contains("ativa")) blocoParCliente.classList.toggle("oculto", !parCliente);
+  } catch (e) {
+    console.error("Falha a carregar info do token (fica sem o passo de escolha de empresa):", e);
+  }
+}
+carregarParCliente();
+
+function renderizarBotoesParCliente() {
+  botoesParCliente.innerHTML = "";
+  if (!parCliente) return;
+  parCliente.forEach((opcao) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "btn-opcao-par";
+    btn.textContent = opcao.rotulo;
+    btn.classList.toggle("selecionado", empresaEscolhida === opcao.valor);
+    btn.addEventListener("click", () => {
+      empresaEscolhida = opcao.valor;
+      renderizarBotoesParCliente();
+    });
+    botoesParCliente.appendChild(btn);
+  });
+}
+
 function t(chave, params) {
   const tabela = TRADUCOES[idioma] || TRADUCOES.pt;
   let texto = tabela[chave];
@@ -388,6 +428,7 @@ function renderizarLote() {
     cartao.append(ic, info, btnRemover);
     listaLote.appendChild(cartao);
   });
+  blocoParCliente.classList.toggle("oculto", !parCliente);
   atualizarMedidorTamanho();
 }
 
@@ -518,6 +559,7 @@ async function tentarEnvioAutomatico(ficheiros, miniaturas) {
       formData.append("files", ficheiro, ficheiro.name);
     }
     if (tokenCliente) formData.append("token", tokenCliente);
+    if (parCliente && empresaEscolhida) formData.append("empresa_escolhida", empresaEscolhida);
     formData.append("fp", calcularImpressaoDigitalAparelho());
     if (miniaturas && Object.keys(miniaturas).length > 0) {
       formData.append("miniaturas", JSON.stringify(miniaturas));
@@ -695,6 +737,10 @@ function nomeZipComData() {
 async function enviar() {
   if (documentos.length === 0) return;
   if (await atualizarMedidorTamanho()) return; // lote grande demais -- botão já ficou desativado, defesa extra
+  if (parCliente && !empresaEscolhida) {
+    alert(t("par_cliente_obrigatorio"));
+    return;
+  }
 
   // Pedido explícito do utilizador, 2026-09-14: o aviso "já enviado
   // antes" (ver adicionarFicheiros/carregarHistoricoConhecido) não
@@ -749,6 +795,7 @@ async function enviar() {
 
   if (enviouAutomaticamente) {
     documentos = [];
+    empresaEscolhida = null; // próximo lote volta a pedir a escolha
     mostrarTela("concluido");
     // Atualiza o histórico conhecido em fundo -- sem isto, reenviar o
     // mesmo ficheiro ainda na mesma sessão (sem recarregar a página)

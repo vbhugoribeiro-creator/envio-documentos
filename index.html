@@ -299,6 +299,18 @@
     font-size:12.5px; color:var(--perigo); font-weight:700;
     text-align:center; line-height:1.5; margin:0; padding:0 4px;
   }
+  .bloco-par-cliente{
+    background:var(--navy-800); border-radius:13px; padding:12px 14px;
+    display:flex; flex-direction:column; gap:10px;
+  }
+  .rotulo-par-cliente{font-size:13.5px; font-weight:700; margin:0; text-align:center;}
+  .botoes-par-cliente{display:flex; gap:8px;}
+  .btn-opcao-par{
+    flex:1; background:var(--navy-700); color:var(--white);
+    border:2px solid transparent; border-radius:11px;
+    padding:11px 10px; font-size:13.5px; font-weight:700;
+  }
+  .btn-opcao-par.selecionado{border-color:var(--gold); color:var(--gold-light);}
   .cartao-lote{
     background:var(--navy-800);
     border-radius:14px;
@@ -530,6 +542,17 @@
       <div class="medidor-texto" id="medidor-texto">0 MB / 25 MB</div>
     </div>
     <p class="aviso-tamanho oculto" id="aviso-tamanho-lote" data-i18n="aviso_lote_grande">Este lote está demasiado grande para enviar automaticamente — remove alguns documentos antes de enviar.</p>
+
+    <!-- Escolha de empresa (2026-10-15) -- só aparece para um link
+         PARTILHADO entre 2 empresas (ver /info-token, carregarParCliente
+         em app.js). Obrigatório escolher antes de enviar -- nunca
+         depende de localStorage/token sobreviver, é decidido aqui, a
+         cada envio. -->
+    <div class="bloco-par-cliente oculto" id="bloco-par-cliente">
+      <p class="rotulo-par-cliente" data-i18n="par_cliente_pergunta">Para que empresa é este envio?</p>
+      <div class="botoes-par-cliente" id="botoes-par-cliente"></div>
+    </div>
+
     <button class="btn-secundario btn-full" id="btn-adicionar-outro" data-i18n="btn_adicionar_outro">+ Adicionar outro documento</button>
     <div class="botoes botoes-concluido">
       <button class="btn-principal btn-full" id="btn-partilhar" data-i18n="btn_partilhar">Enviar tudo »</button>
